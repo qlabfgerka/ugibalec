@@ -47,8 +47,10 @@
       <mat-error *ngIf="errorControl.repeat.errors?.required">
         Please re-enter your password.
       </mat-error>
-      <mat-error *ngIf="error"> Passwords do not match. </mat-error>
     </mat-form-field>
+    <div class="mat-error ng-tns-c68-4 ng-star-inserted" *ngIf="error">
+      {{ error }}
+    </div>
 
     <div class="break"></div>
 

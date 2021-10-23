@@ -21,4 +21,11 @@ export class UserService {
       user,
     });
   }
+
+  public saveTokens(tokens: TokenDTO): boolean {
+    localStorage.setItem('JWT_TOKEN', tokens.accessToken);
+    localStorage.setItem('REFRESH_TOKEN', tokens.refreshToken);
+
+    return true;
+  }
 }

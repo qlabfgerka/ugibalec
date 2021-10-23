@@ -53,20 +53,25 @@ export class RegistrationComponent implements OnInit {
         wins: 0,
       };
 
-      /*this.userService
+      this.userService
         .register(user)
         .pipe(
           take(1),
           mergeMap(() => this.userService.login(user)),
           catchError((error) => throwError(error))
         )
-        .subscribe((tokens: TokenDTO) => {});*/
-      this.userService
-        .register(user)
-        .pipe(take(1))
-        .subscribe((newUser: UserDTO) => {
-          console.log(newUser);
-        });
+        .subscribe(
+          (tokens: TokenDTO) => {
+            this.userService.saveTokens(tokens);
+
+            this.router.navigate(['']);
+          },
+          (error) => {
+            this.error = error.error.error;
+            console.log(this.error);
+            this.registerForm.setErrors({ incorrect: true });
+          }
+        );
     }
   }
 
