@@ -74,6 +74,14 @@ export class AuthService {
     return tokenDTO;
   }
 
+  public async logout(id: string): Promise<void> {
+    const user = await this.userModel.findById(id);
+    user.refreshToken = null;
+    user.refreshTokenExpiry = null;
+
+    await user.save();
+  }
+
   public async getUserWithTokens(id: string): Promise<User> {
     const user = await this.userModel.findById(id);
     const userDTO = this.dtoFunctions.userToDTO(user);

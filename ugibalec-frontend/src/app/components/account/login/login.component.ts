@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { take } from 'rxjs/operators';
 import { TokenDTO } from 'src/app/models/token/token.model';
 import { UserDTO } from 'src/app/models/user/user.model';
-import { UserService } from 'src/app/services/user/user.service';
+import { AuthService } from 'src/app/services/user/auth/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +17,7 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly userService: UserService,
+    private readonly authService: AuthService,
     private readonly router: Router
   ) {}
 
@@ -41,12 +41,12 @@ export class LoginComponent implements OnInit {
         wins: 0,
       };
 
-      this.userService
+      this.authService
         .login(user)
         .pipe(take(1))
         .subscribe(
           (tokens: TokenDTO) => {
-            this.userService.saveTokens(tokens);
+            this.authService.saveTokens(tokens);
 
             this.router.navigate(['']);
           },

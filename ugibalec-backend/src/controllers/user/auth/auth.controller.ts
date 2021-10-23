@@ -5,6 +5,7 @@ import {
   UseGuards,
   Request,
   Get,
+  Delete,
 } from '@nestjs/common';
 import { TokenDTO } from 'src/models/token/token.model';
 import { User } from 'src/models/user/user.model';
@@ -28,6 +29,12 @@ export class AuthController {
     return this.authService.login(req.user);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Delete('logout')
+  public async logout(@Request() req: any): Promise<void> {
+    return this.authService.logout(req.user.id);
+  }
+
   @UseGuards(JwtRefreshAuthGuard)
   @Post('refreshToken')
   public async refreshToken(@Request() req: any): Promise<TokenDTO> {
@@ -36,7 +43,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('test')
-  public async test(): Promise<string> {
-    return 'test';
+  public async test(): Promise<{ test: string }> {
+    return { test: 'test' };
   }
 }

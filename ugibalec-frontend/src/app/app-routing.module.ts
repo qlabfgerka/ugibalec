@@ -1,5 +1,7 @@
 import { NgModule } from '@angular/core';
 import { ExtraOptions, RouterModule, Routes } from '@angular/router';
+import { AuthGuard } from './guards/auth/auth.guard';
+import { UnAuthGuard } from './guards/unauth/unauth.guard';
 
 const routes: Routes = [
   {
@@ -8,6 +10,7 @@ const routes: Routes = [
       import('./components/account/login/login.module').then(
         (m) => m.LoginModule
       ),
+    canActivate: [UnAuthGuard],
   },
   {
     path: `register`,
@@ -15,6 +18,7 @@ const routes: Routes = [
       import('./components/account/registration/registration.module').then(
         (m) => m.RegistrationModule
       ),
+    canActivate: [UnAuthGuard],
   },
   {
     path: `error`,
@@ -25,6 +29,7 @@ const routes: Routes = [
     path: ``,
     loadChildren: () =>
       import('./components/home/home.module').then((m) => m.HomeModule),
+    canActivate: [AuthGuard],
   },
   {
     path: '**',
