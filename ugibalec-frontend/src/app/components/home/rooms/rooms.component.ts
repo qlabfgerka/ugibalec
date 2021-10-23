@@ -1,25 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-
-export interface PeriodicElement {
-  name: string;
-  position: number;
-  weight: number;
-  symbol: string;
-}
-
-const ELEMENT_DATA: PeriodicElement[] = [
-  { position: 1, name: 'Hydrogen', weight: 1.0079, symbol: 'H' },
-  { position: 2, name: 'Helium', weight: 4.0026, symbol: 'He' },
-  { position: 3, name: 'Lithium', weight: 6.941, symbol: 'Li' },
-  { position: 4, name: 'Beryllium', weight: 9.0122, symbol: 'Be' },
-  { position: 5, name: 'Boron', weight: 10.811, symbol: 'B' },
-  { position: 6, name: 'Carbon', weight: 12.0107, symbol: 'C' },
-  { position: 7, name: 'Nitrogen', weight: 14.0067, symbol: 'N' },
-  { position: 8, name: 'Oxygen', weight: 15.9994, symbol: 'O' },
-  { position: 9, name: 'Fluorine', weight: 18.9984, symbol: 'F' },
-  { position: 10, name: 'Neon', weight: 20.1797, symbol: 'Ne' },
-];
+import { take } from 'rxjs/operators';
+import { RoomDTO } from 'src/app/models/room/room.model';
+import { RoomService } from 'src/app/services/room/room.service';
+import { MatDialog } from '@angular/material/dialog';
+import { CreateRoomDialogComponent } from 'src/app/shared/dialogs/create-room-dialog/create-room-dialog.component';
+import { MatTableDataSource } from '@angular/material/table';
+import { PasswordDialogComponent } from 'src/app/shared/dialogs/password-dialog/password-dialog.component';
 
 @Component({
   selector: 'app-rooms',
@@ -27,14 +14,58 @@ const ELEMENT_DATA: PeriodicElement[] = [
   styleUrls: ['./rooms.component.scss'],
 })
 export class RoomsComponent implements OnInit {
-  displayedColumns: string[] = ['title', 'players', 'join'];
-  dataSource = ELEMENT_DATA;
+  public rooms: Array<RoomDTO>;
+  public displayedColumns: string[] = ['title', 'players', 'locked', 'join'];
+  public dataSource: MatTableDataSource<RoomDTO>;
 
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private readonly roomService: RoomService,
+    private readonly dialog: MatDialog
+  ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.refreshRooms();
+  }
 
-  public joinRoom(): void {
-    this.router.navigate(['/lobby']);
+  public createRoom(): void {
+    const dialogRef = this.dialog.open(CreateRoomDialogComponent);
+
+    dialogRef.afterClosed().subscribe((room: RoomDTO) => {
+      if (room) {
+        this.roomService
+          .createRoom(room)
+          .pipe(take(1))
+          .subscribe((newRoom: RoomDTO) => {
+            this.router.navigate([`lobby/${newRoom.id}`]);
+          });
+      }
+    });
+  }
+
+  public refreshRooms(): void {
+    this.roomService
+      .getRooms()
+      .pipe(take(1))
+      .subscribe((rooms: Array<RoomDTO>) => {
+        this.rooms = rooms;
+        this.dataSource = new MatTableDataSource(this.rooms);
+      });
+  }
+
+  public joinRoom(room: RoomDTO): void {
+    if (room.playerList.length >= room.maxPlayers) return;
+
+    if (room.password) {
+      const dialogRef = this.dialog.open(PasswordDialogComponent);
+
+      dialogRef.afterClosed().subscribe((password: string) => {
+        if (room.password === password) {
+          this.router.navigate([`lobby/${room.id}`]);
+        }
+      });
+    } else {
+      this.router.navigate([`lobby/${room.id}`]);
+    }
   }
 }

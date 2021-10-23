@@ -1,4 +1,4 @@
-<div class="flexbox">
+<div class="flexbox" *ngIf="!isLoading">
   <h1>Lobby</h1>
   <div class="break"></div>
 
@@ -18,14 +18,18 @@
           Player name
         </th>
         <td mat-cell *matCellDef="let element" class="auto">
-          {{ element.name }}
+          {{ element.nickname }}
         </td>
       </ng-container>
 
       <ng-container matColumnDef="kick">
         <th mat-header-cell *matHeaderCellDef class="center-text">KICK</th>
         <td mat-cell *matCellDef="let element" class="short center-text">
-          <button mat-raised-button color="warn" (click)="joinRoom()">
+          <button
+            mat-raised-button
+            color="warn"
+            (click)="kickPlayer(element.id)"
+          >
             KICK
           </button>
         </td>
@@ -37,26 +41,64 @@
   </div>
 
   <div class="margin half-width">
-    <form class="form" (onSubmit)="startGame()">
-      <h3 class="center-text">Settings</h3>
-      <div class="break"></div>
+    <h3 class="center-text">Settings</h3>
+    <form
+      class="form"
+      [formGroup]="roomForm"
+      (ngSubmit)="updateRoom()"
+      *ngIf="roomForm"
+    >
+      <mat-form-field class="wide" appearance="fill">
+        <mat-label>Room title</mat-label>
+        <input
+          matInput
+          placeholder="Example Best drawers only!!"
+          formControlName="title"
+        />
+        <mat-error *ngIf="errorControl.title.errors?.required">
+          Please enter a title.
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="wide" appearance="fill">
+        <mat-label>Room password</mat-label>
+        <input matInput formControlName="password" type="password" />
+      </mat-form-field>
 
       <mat-form-field class="wide" appearance="fill">
         <mat-label>Max players</mat-label>
-        <input matInput type="number" />
+        <input matInput formControlName="maxPlayers" type="number" value="8" />
+        <mat-error *ngIf="errorControl.title.errors?.required">
+          Please enter a max player number.
+        </mat-error>
       </mat-form-field>
-
-      <div class="break"></div>
 
       <mat-form-field class="wide" appearance="fill">
-        <mat-label>Password</mat-label>
-        <input matInput type="password" />
+        <mat-label>Wordpack</mat-label>
+        <mat-select formControlName="wordpack">
+          <mat-option *ngFor="let wordpack of wordpacks" [value]="wordpack.id">
+            {{ wordpack.title }}
+          </mat-option>
+        </mat-select>
       </mat-form-field>
 
-      <div class="break"></div>
-
       <div class="flexbox">
-        <button mat-raised-button color="primary" type="submit">START</button>
+        <button
+          mat-raised-button
+          type="button"
+          color="primary"
+          class="margin-right"
+        >
+          CREATE
+        </button>
+        <button
+          mat-raised-button
+          color="accent"
+          type="submit"
+          [disabled]="!roomForm.valid"
+        >
+          UPDATE
+        </button>
       </div>
     </form>
   </div>

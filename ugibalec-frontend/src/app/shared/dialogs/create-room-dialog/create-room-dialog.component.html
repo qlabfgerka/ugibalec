@@ -1,0 +1,45 @@
+<mat-dialog-content>
+  <form class="form" [formGroup]="roomForm" (ngSubmit)="createRoom()">
+    <h1>Create room</h1>
+    <mat-form-field class="wide" appearance="fill">
+      <mat-label>Room title</mat-label>
+      <input
+        matInput
+        placeholder="Example Best drawers only!!"
+        formControlName="title"
+      />
+      <mat-error *ngIf="errorControl.title.errors?.required">
+        Please enter a title.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field class="wide" appearance="fill">
+      <mat-label>Room password</mat-label>
+      <input matInput formControlName="password" type="password" />
+    </mat-form-field>
+
+    <mat-form-field class="wide" appearance="fill">
+      <mat-label>Max players</mat-label>
+      <input matInput formControlName="maxPlayers" type="number" value="8" />
+      <mat-error *ngIf="errorControl.title.errors?.required">
+        Please enter a max player number.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field class="wide" appearance="fill">
+      <mat-label>Wordpack</mat-label>
+      <mat-select formControlName="wordpack">
+        <mat-option *ngFor="let wordpack of wordpacks" [value]="wordpack.id">
+          {{ wordpack.title }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button mat-button type="submit" [disabled]="!roomForm.valid">
+      CREATE
+    </button>
+    <button mat-button type="button" color="warn" mat-dialog-close>
+      CANCEL
+    </button>
+  </form>
+</mat-dialog-content>

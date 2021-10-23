@@ -4,10 +4,20 @@
   <div class="break"></div>
 
   <div class="table margin">
-    <button mat-raised-button color="primary" class="margin-right">
+    <button
+      mat-raised-button
+      color="primary"
+      class="margin-right"
+      (click)="createRoom()"
+    >
       CREATE ROOM
     </button>
-    <button mat-raised-button color="accent" class="margin-right">
+    <button
+      mat-raised-button
+      color="accent"
+      class="margin-right"
+      (click)="refreshRooms()"
+    >
       REFRESH ROOMS
     </button>
   </div>
@@ -21,22 +31,30 @@
 
     <ng-container matColumnDef="title">
       <th mat-header-cell *matHeaderCellDef class="center-text">Room name</th>
-      <td mat-cell *matCellDef="let element" class="auto">
-        {{ element.name }}
+      <td mat-cell *matCellDef="let room" class="auto">
+        {{ room.title }}
       </td>
     </ng-container>
 
     <ng-container matColumnDef="players">
       <th mat-header-cell *matHeaderCellDef class="center-text">Players</th>
-      <td mat-cell *matCellDef="let element" class="short center-text">
-        {{ element.position }}
+      <td mat-cell *matCellDef="let room" class="short center-text">
+        {{ room.playerList.length }} / {{ room.maxPlayers }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="locked">
+      <th mat-header-cell *matHeaderCellDef class="center-text">PASSWORD</th>
+      <td mat-cell *matCellDef="let room" class="short center-text">
+        <mat-icon *ngIf="room.password">lock</mat-icon>
+        <mat-icon *ngIf="!room.password">lock_open</mat-icon>
       </td>
     </ng-container>
 
     <ng-container matColumnDef="join">
       <th mat-header-cell *matHeaderCellDef class="center-text">JOIN</th>
-      <td mat-cell *matCellDef="let element" class="short center-text">
-        <button mat-raised-button color="primary" (click)="joinRoom()">
+      <td mat-cell *matCellDef="let room" class="short center-text">
+        <button mat-raised-button color="primary" (click)="joinRoom(room)">
           JOIN
         </button>
       </td>

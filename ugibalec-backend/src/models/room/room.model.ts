@@ -13,6 +13,12 @@ export class Room {
   @Prop()
   title: string;
 
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+  admin: User;
+
+  @Prop()
+  password: string;
+
   @Prop()
   maxPlayers: number;
 

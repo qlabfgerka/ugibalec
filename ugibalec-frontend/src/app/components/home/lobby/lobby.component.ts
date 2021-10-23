@@ -1,25 +1,14 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-
-export interface PeriodicElement {
-  name: string;
-  position: number;
-  weight: number;
-  symbol: string;
-}
-
-const ELEMENT_DATA: PeriodicElement[] = [
-  { position: 1, name: 'Hydrogen', weight: 1.0079, symbol: 'H' },
-  { position: 2, name: 'Helium', weight: 4.0026, symbol: 'He' },
-  { position: 3, name: 'Lithium', weight: 6.941, symbol: 'Li' },
-  { position: 4, name: 'Beryllium', weight: 9.0122, symbol: 'Be' },
-  { position: 5, name: 'Boron', weight: 10.811, symbol: 'B' },
-  { position: 6, name: 'Carbon', weight: 12.0107, symbol: 'C' },
-  { position: 7, name: 'Nitrogen', weight: 14.0067, symbol: 'N' },
-  { position: 8, name: 'Oxygen', weight: 15.9994, symbol: 'O' },
-  { position: 9, name: 'Fluorine', weight: 18.9984, symbol: 'F' },
-  { position: 10, name: 'Neon', weight: 20.1797, symbol: 'Ne' },
-];
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatTableDataSource } from '@angular/material/table';
+import { ActivatedRoute, Params, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
+import { mergeMap, take } from 'rxjs/operators';
+import { RoomDTO } from 'src/app/models/room/room.model';
+import { UserDTO } from 'src/app/models/user/user.model';
+import { WordpackDTO } from 'src/app/models/wordpack/wordpack.model';
+import { RoomService } from 'src/app/services/room/room.service';
+import { WordpackService } from 'src/app/services/wordpack/wordpack.service';
 
 @Component({
   selector: 'app-lobby',
@@ -27,14 +16,78 @@ const ELEMENT_DATA: PeriodicElement[] = [
   styleUrls: ['./lobby.component.scss'],
 })
 export class LobbyComponent implements OnInit {
-  displayedColumns: string[] = ['name', 'kick'];
-  dataSource = ELEMENT_DATA;
+  public room: RoomDTO;
+  public dataSource: MatTableDataSource<UserDTO>;
+  public displayedColumns: string[] = ['name', 'kick'];
+  public roomForm: FormGroup;
+  public wordpacks: Array<WordpackDTO>;
+  public isLoading: boolean;
 
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly roomService: RoomService,
+    private readonly wordpackService: WordpackService,
+    private readonly formBuilder: FormBuilder
+  ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.isLoading = true;
+    this.route.params
+      .pipe(
+        mergeMap((params: Params) =>
+          forkJoin([
+            this.roomService.getRoom(params.id).pipe(take(1)),
+            this.wordpackService.getWordpacks().pipe(take(1)),
+          ])
+        )
+      )
+      .subscribe((response) => {
+        this.room = response[0];
+        this.wordpacks = response[1];
+        this.dataSource = new MatTableDataSource(this.room.playerList);
+
+        this.roomForm = this.formBuilder.group({
+          title: [this.room.title, [Validators.required]],
+          password: [this.room.password],
+          maxPlayers: [
+            this.room.maxPlayers,
+            [Validators.required, Validators.min(3), Validators.max(8)],
+          ],
+          wordpack: [this.room.wordpack.id, [Validators.required]],
+        });
+
+        this.isLoading = false;
+      });
+  }
 
   public startGame(): void {
     this.router.navigate(['/game']);
+  }
+
+  public kickPlayer(id: string): void {
+    console.log(id);
+  }
+
+  public updateRoom(): void {
+    if (this.roomForm.valid) {
+      this.room.maxPlayers = this.roomForm.get('maxPlayers').value;
+      this.room.password = this.roomForm.get('password').value;
+      this.room.title = this.roomForm.get('title').value;
+      this.room.wordpack = this.wordpacks.find(
+        (wordpack) => this.roomForm.get('wordpack').value === wordpack.id
+      );
+
+      this.roomService
+        .updateRoom(this.room)
+        .pipe(take(1))
+        .subscribe((room: RoomDTO) => {
+          this.room = room;
+        });
+    }
+  }
+
+  public get errorControl() {
+    return this.roomForm.controls;
   }
 }

@@ -13,12 +13,12 @@ const routes: Routes = [
           import('./rooms/rooms.module').then((m) => m.RoomsModule),
       },
       {
-        path: `lobby`,
+        path: `lobby/:id`,
         loadChildren: () =>
           import('./lobby/lobby.module').then((m) => m.LobbyModule),
       },
       {
-        path: `game`,
+        path: `game/:id`,
         loadChildren: () =>
           import('./game/game.module').then((m) => m.GameModule),
       },
