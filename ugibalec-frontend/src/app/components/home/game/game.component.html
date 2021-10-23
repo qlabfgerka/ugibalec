@@ -1,0 +1,72 @@
+<div class="container padding">
+  <div class="twenty">
+    <table
+      mat-table
+      [dataSource]="dataSource"
+      class="mat-elevation-z8 table margin"
+    >
+      <button mat-raised-button color="primary">Primary</button>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef class="center-text">
+          Player name
+        </th>
+        <td mat-cell *matCellDef="let element" class="auto">
+          {{ element.name }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="points">
+        <th mat-header-cell *matHeaderCellDef class="center-text">Points</th>
+        <td mat-cell *matCellDef="let element" class="short center-text">
+          <button mat-raised-button color="warn" (click)="joinRoom()">
+            KICK
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+
+  <div class="sixty">
+    <div class="flexbox">
+      <canvas class="canvas"></canvas>
+    </div>
+  </div>
+
+  <div class="twenty">
+    <div class="flexbox">
+      <div class="wide chat margin margin-bottom chat-padding">
+        User 1: asdasd <br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User
+        3: asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
+        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
+        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
+        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
+        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
+        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
+        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
+        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
+        asdasdas<br />User 2:
+        asdasdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa <br />User
+        1: asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
+        asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
+        asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
+        asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
+        asdasd <br />User 3: asdasdas
+      </div>
+
+      <form class="padding-side wide">
+        <mat-form-field appearance="fill" class="wide">
+          <mat-label>Guess word</mat-label>
+          <input matInput />
+        </mat-form-field>
+
+        <div class="flexbox">
+          <button mat-raised-button color="primary" type="submit">SEND</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
