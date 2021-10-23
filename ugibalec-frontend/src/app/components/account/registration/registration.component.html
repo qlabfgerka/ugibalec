@@ -1,38 +1,66 @@
 <div class="flexbox">
-  <form class="form">
+  <form
+    class="form"
+    [formGroup]="registerForm"
+    (ngSubmit)="register()"
+    *ngIf="this.registerForm"
+  >
     <h1 class="center-text">Register</h1>
     <div class="break"></div>
 
     <mat-form-field class="wide" appearance="fill">
       <mat-label>Email</mat-label>
-      <input matInput type="email" />
+      <input matInput type="email" formControlName="email" />
+      <mat-error *ngIf="errorControl.email.errors?.required">
+        Please enter an email.
+      </mat-error>
+      <mat-error *ngIf="errorControl.email.errors?.email">
+        Please enter a valid email.
+      </mat-error>
     </mat-form-field>
 
     <div class="break"></div>
 
     <mat-form-field class="wide" appearance="fill">
       <mat-label>Username</mat-label>
-      <input matInput />
+      <input matInput formControlName="username" />
+      <mat-error *ngIf="errorControl.username.errors?.required">
+        Please enter a username.
+      </mat-error>
     </mat-form-field>
 
     <div class="break"></div>
 
     <mat-form-field class="wide" appearance="fill">
       <mat-label>Password</mat-label>
-      <input matInput type="password" />
+      <input matInput type="password" formControlName="password" />
+      <mat-error *ngIf="errorControl.password.errors?.required">
+        Please enter a password.
+      </mat-error>
     </mat-form-field>
 
     <div class="break"></div>
 
     <mat-form-field class="wide" appearance="fill">
-      <mat-label>Confirm password</mat-label>
-      <input matInput type="password" />
+      <mat-label>Repeat password</mat-label>
+      <input matInput type="password" formControlName="repeat" />
+      <mat-error *ngIf="errorControl.repeat.errors?.required">
+        Please re-enter your password.
+      </mat-error>
+      <mat-error *ngIf="error"> Passwords do not match. </mat-error>
     </mat-form-field>
 
     <div class="break"></div>
 
     <div class="flexbox">
-      <button mat-raised-button color="primary" type="submit">REGISTER</button>
+      <button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        [disabled]="!registerForm.valid"
+      >
+        REGISTER
+      </button>
     </div>
   </form>
 </div>
