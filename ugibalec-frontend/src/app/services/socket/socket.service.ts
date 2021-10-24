@@ -16,11 +16,15 @@ export class SocketService {
     if (this.socket) this.socket.disconnect();
   }*/
 
-  public joinRoom(roomId: string): void {
-    this.socket.emit('joinRoom', roomId);
+  public joinRoom(roomId: string, userId: string): void {
+    this.socket.emit('joinRoom', { roomId, userId });
   }
 
   public leaveRoom(roomId: string): void {
     this.socket.emit('leaveRoom', roomId);
+  }
+
+  public kickPlayer(roomId: string, userId: string): void {
+    this.socket.emit('kick', { roomId, userId });
   }
 }

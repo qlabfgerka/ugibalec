@@ -8,6 +8,7 @@ import { CreateRoomDialogComponent } from 'src/app/shared/dialogs/create-room-di
 import { MatTableDataSource } from '@angular/material/table';
 import { PasswordDialogComponent } from 'src/app/shared/dialogs/password-dialog/password-dialog.component';
 import { SocketService } from 'src/app/services/socket/socket.service';
+import { AuthService } from 'src/app/services/user/auth/auth.service';
 
 @Component({
   selector: 'app-rooms',
@@ -24,7 +25,8 @@ export class RoomsComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly router: Router,
     private readonly roomService: RoomService,
     private readonly dialog: MatDialog,
-    private readonly socketService: SocketService
+    private readonly socketService: SocketService,
+    private readonly authService: AuthService
   ) {}
 
   ngOnDestroy(): void {
@@ -52,7 +54,10 @@ export class RoomsComponent implements OnInit, AfterViewInit, OnDestroy {
           .createRoom(room)
           .pipe(take(1))
           .subscribe((newRoom: RoomDTO) => {
-            this.socketService.joinRoom(newRoom.id);
+            this.socketService.joinRoom(
+              newRoom.id,
+              this.authService.getUserID()
+            );
             this.router.navigate([`lobby/${newRoom.id}`]);
           });
       }
@@ -89,7 +94,7 @@ export class RoomsComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(take(1))
       .subscribe((connected: boolean) => {
         if (connected) {
-          this.socketService.joinRoom(room.id);
+          this.socketService.joinRoom(room.id, this.authService.getUserID());
           //this.socketService.connect();
           this.router.navigate([`lobby/${room.id}`]);
         }

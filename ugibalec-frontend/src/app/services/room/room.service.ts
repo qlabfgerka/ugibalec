@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { RoomDTO } from 'src/app/models/room/room.model';
+import { UserDTO } from 'src/app/models/user/user.model';
 
 @Injectable({
   providedIn: 'root',
@@ -42,6 +43,13 @@ export class RoomService {
     return this.httpClient.patch<boolean>(
       `${this.hostname}/room/leave/${roomId}`,
       {}
+    );
+  }
+
+  public kickPlayer(roomId: string, user: UserDTO): Observable<boolean> {
+    return this.httpClient.patch<boolean>(
+      `${this.hostname}/room/kick/${roomId}`,
+      { user }
     );
   }
 }

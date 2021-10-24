@@ -97,6 +97,11 @@ export class RoomService {
 
     if (index > -1) {
       room.playerList.splice(index, 1);
+
+      if (room.admin.toString() === user.id) {
+        room.admin = room.playerList[0];
+      }
+
       await room.save();
 
       if (room.playerList.length === 0) {

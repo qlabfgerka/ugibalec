@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Room } from 'src/models/room/room.model';
+import { User } from 'src/models/user/user.model';
 import { SocketService } from 'src/services/socket/socket.service';
 import { JwtAuthGuard } from '../user/auth/guards/jwt-auth.guard';
 import { RoomService } from './room.service';
@@ -29,7 +30,6 @@ export class RoomController {
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   public async getRoom(@Param('id') roomId: string): Promise<Room> {
-    console.log(roomId);
     return await this.roomService.getRoom(roomId);
   }
 
@@ -64,10 +64,6 @@ export class RoomController {
   ): Promise<boolean> {
     const result = await this.roomService.joinRoom(id, req.user.id, password);
 
-    console.log(req.user.id);
-    console.log(password);
-    console.log(id);
-
     if (result) {
       this.socketService.server.to(id).emit('roomChanged', 'hello from server');
     }
@@ -86,6 +82,23 @@ export class RoomController {
     if (result) {
       this.socketService.server
         .to(id)
+        .emit('roomChanged', 'goodbye from server');
+    }
+
+    return result;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('kick/:id')
+  public async kickPlayer(
+    @Param('id') roomId: string,
+    @Body('user') user: User,
+  ): Promise<boolean> {
+    const result = await this.roomService.leaveRoom(roomId, user.id);
+
+    if (result) {
+      this.socketService.server
+        .to(roomId)
         .emit('roomChanged', 'goodbye from server');
     }
 

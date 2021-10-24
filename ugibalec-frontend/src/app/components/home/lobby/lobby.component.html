@@ -18,6 +18,7 @@
           Player name
         </th>
         <td mat-cell *matCellDef="let element" class="auto">
+          <mat-icon *ngIf="element.id === this.room.admin.id">star</mat-icon>
           {{ element.nickname }}
         </td>
       </ng-container>
@@ -28,7 +29,7 @@
           <button
             mat-raised-button
             color="warn"
-            (click)="kickPlayer(element.id)"
+            (click)="kickPlayer(element)"
             [disabled]="this.userId !== this.room.admin.id"
             *ngIf="
               this.userId === this.room.admin.id && this.userId !== element.id

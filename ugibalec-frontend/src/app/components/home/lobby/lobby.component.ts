@@ -44,11 +44,16 @@ export class LobbyComponent implements OnInit, OnDestroy {
     this.socketService.socket.on('roomChanged', () => {
       this.refreshRoom();
     });
+
+    this.socketService.socket.on('kicked', () => {
+      this.router.navigate(['']);
+    });
   }
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
     this.socketService.socket.off('roomChanged');
+    this.socketService.socket.off('kicked');
 
     this.socketService.leaveRoom(this.room.id);
     this.roomService
@@ -61,8 +66,13 @@ export class LobbyComponent implements OnInit, OnDestroy {
     this.router.navigate(['/game']);
   }
 
-  public kickPlayer(id: string): void {
-    console.log(id);
+  public kickPlayer(user: UserDTO): void {
+    this.roomService
+      .kickPlayer(this.room.id, user)
+      .pipe(take(1))
+      .subscribe(() => {
+        this.socketService.kickPlayer(this.room.id, user.id);
+      });
   }
 
   public updateRoom(): void {
@@ -104,7 +114,6 @@ export class LobbyComponent implements OnInit, OnDestroy {
         this.room = response[0];
         this.wordpacks = response[1];
         this.dataSource = new MatTableDataSource(this.room.playerList);
-        console.log(this.room);
 
         this.roomForm = this.formBuilder.group({
           title: [this.room.title, [Validators.required]],
