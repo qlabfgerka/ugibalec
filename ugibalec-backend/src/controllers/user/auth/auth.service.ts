@@ -65,7 +65,7 @@ export class AuthService {
   }
 
   public async login(user: User): Promise<TokenDTO> {
-    const payload = { user: user.username, id: user.id };
+    const payload = { username: user.username, id: user.id };
     const tokenDTO: TokenDTO = {
       accessToken: this.jwtService.sign(payload),
       refreshToken: await this.generateRefreshToken(user, nanoid(64)),

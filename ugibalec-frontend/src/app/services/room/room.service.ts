@@ -30,4 +30,18 @@ export class RoomService {
       room,
     });
   }
+
+  public joinRoom(roomId: string, password: string): Observable<boolean> {
+    return this.httpClient.patch<boolean>(
+      `${this.hostname}/room/join/${roomId}`,
+      { password }
+    );
+  }
+
+  public leaveRoom(roomId: string): Observable<boolean> {
+    return this.httpClient.patch<boolean>(
+      `${this.hostname}/room/leave/${roomId}`,
+      {}
+    );
+  }
 }

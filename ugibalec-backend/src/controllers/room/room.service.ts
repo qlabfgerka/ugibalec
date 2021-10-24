@@ -5,6 +5,7 @@ import { Room, RoomDocument } from 'src/models/room/room.model';
 import { User, UserDocument } from 'src/models/user/user.model';
 import { Wordpack, WordpackDocument } from 'src/models/wordpack/wordpack.model';
 import { DtoFunctionsService } from 'src/services/dto-functions/dto-functions.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class RoomService {
@@ -34,7 +35,7 @@ export class RoomService {
     const newRoom = new this.roomModel({
       title: room.title,
       admin: admin,
-      password: room.password,
+      password: await this.generateHash(room.password),
       maxPlayers: room.maxPlayers,
       playerList: [admin],
       wordpack: wordpack,
@@ -56,7 +57,7 @@ export class RoomService {
       this.dtoFunctions.userToDTO(roomAdmin).id
     ) {
       currentRoom.title = room.title;
-      currentRoom.password = room.password;
+      currentRoom.password = await this.generateHash(room.password);
       currentRoom.wordpack = wordpack;
       currentRoom.maxPlayers = room.maxPlayers;
 
@@ -64,5 +65,56 @@ export class RoomService {
     }
 
     return currentRoom;
+  }
+
+  public async joinRoom(
+    roomId: string,
+    userId: string,
+    password: string,
+  ): Promise<boolean> {
+    const room = await this.roomModel.findById(roomId);
+    const user = await this.userModel.findById(userId);
+
+    if (room.password && !(await bcrypt.compare(password, room.password)))
+      return false;
+
+    if (room.playerList.length >= room.maxPlayers) return false;
+
+    room.playerList.push(user);
+
+    await room.save();
+
+    return true;
+  }
+
+  public async leaveRoom(roomId: string, userId: string): Promise<boolean> {
+    const room = await this.roomModel.findById(roomId);
+    const user = await this.userModel.findById(userId);
+
+    const index = room.playerList.indexOf(
+      room.playerList.find((player: User) => user.id === player.toString()),
+    );
+
+    if (index > -1) {
+      room.playerList.splice(index, 1);
+      await room.save();
+
+      if (room.playerList.length === 0) {
+        await room.delete();
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  private async generateHash(password: string): Promise<string> {
+    if (password === '') return '';
+
+    const salt = await bcrypt.genSalt();
+    const hash = await bcrypt.hash(password, salt);
+
+    return hash;
   }
 }

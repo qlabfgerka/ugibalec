@@ -6,6 +6,7 @@ import { User, UserSchema } from 'src/models/user/user.model';
 import { MongooseModule } from '@nestjs/mongoose';
 import { DtoFunctionsModule } from 'src/services/dto-functions/dto-functions.module';
 import { Wordpack, WordpackSchema } from 'src/models/wordpack/wordpack.model';
+import { SocketModule } from 'src/services/socket/socket.module';
 
 @Module({
   providers: [RoomService],
@@ -17,6 +18,7 @@ import { Wordpack, WordpackSchema } from 'src/models/wordpack/wordpack.model';
       { name: Wordpack.name, schema: WordpackSchema },
     ]),
     DtoFunctionsModule,
+    SocketModule,
   ],
 })
 export class RoomModule {}

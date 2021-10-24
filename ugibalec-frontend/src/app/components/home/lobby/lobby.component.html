@@ -29,6 +29,10 @@
             mat-raised-button
             color="warn"
             (click)="kickPlayer(element.id)"
+            [disabled]="this.userId !== this.room.admin.id"
+            *ngIf="
+              this.userId === this.room.admin.id && this.userId !== element.id
+            "
           >
             KICK
           </button>
@@ -88,6 +92,7 @@
           type="button"
           color="primary"
           class="margin-right"
+          [disabled]="this.userId !== this.room.admin.id"
         >
           CREATE
         </button>
