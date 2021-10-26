@@ -136,13 +136,64 @@ export class RoomService {
     room.drawer = user;
     room.currentWord =
       wordpack.words[Math.floor(Math.random() * wordpack.words.length)];
-    room.playerList.forEach((player: Player) => {
+    room.playerList.forEach(async (player: Player) => {
+      const p = await this.userModel.findById(player.player.toString());
+      p.gamesPlayed++;
       player.points = 0;
+
+      await p.save();
     });
 
     await room.save();
 
     return true;
+  }
+
+  public async guess(
+    roomId: string,
+    userId: string,
+    guess: string,
+    points: number,
+  ): Promise<number> {
+    const room = await this.roomModel.findById(roomId);
+    const user = await this.userModel.findById(userId);
+    let guessed = 0;
+
+    if (guess.toLowerCase() !== room.currentWord.toLowerCase()) return 0;
+
+    const index = room.playerList.indexOf(
+      room.playerList.find(
+        (player: Player) => user.id === player.player.toString(),
+      ),
+    );
+
+    const drawerIndex = room.playerList.indexOf(
+      room.playerList.find(
+        (player: Player) => room.drawer.toString() === player.player.toString(),
+      ),
+    );
+
+    if (index > -1 && !room.playerList[index].guessed) {
+      const player = await this.userModel.findById(
+        room.playerList[index].player.toString(),
+      );
+      const drawer = await this.userModel.findById(room.drawer.toString());
+      room.playerList[index].points += points;
+      player.cumulativePoints += points;
+      drawer.cumulativePoints += Math.floor(points / 2);
+      room.playerList[index].guessed = true;
+      room.playerList[drawerIndex].points += Math.floor(points / 2);
+
+      room.markModified('playerList');
+      await player.save();
+      await room.save();
+    }
+
+    for (let i = 0; i < room.playerList.length; i++) {
+      if (room.playerList[i].guessed) ++guessed;
+    }
+
+    return guessed === room.playerList.length - 1 ? 2 : 1;
   }
 
   private async generateHash(password: string): Promise<string> {

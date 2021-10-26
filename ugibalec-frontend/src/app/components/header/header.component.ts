@@ -37,5 +37,6 @@ export class HeaderComponent implements OnInit {
     this.socketService.socket.off('roomChanged');
     this.socketService.socket.off('kicked');
     this.socketService.socket.off('gameStarted');
+    this.socketService.socket.off('drawingChanged');
   }
 }

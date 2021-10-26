@@ -119,4 +119,32 @@ export class RoomController {
 
     return result;
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('guess/:id')
+  public async guess(
+    @Param('id') roomId: string,
+    @Request() req: any,
+    @Body('guess') guess: string,
+    @Body('points') points: number,
+  ): Promise<number> {
+    /**
+     * returns:
+     * 0 - wrong guess
+     * 1 - correct guess
+     * 2 - everybody guessed
+     */
+    const result = await this.roomService.guess(
+      roomId,
+      req.user.id,
+      guess,
+      points,
+    );
+
+    if (result > 0) {
+      this.socketService.server.to(roomId).emit('guessed', 'user guessed');
+    }
+
+    return result;
+  }
 }

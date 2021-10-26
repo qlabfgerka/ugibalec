@@ -81,4 +81,14 @@ export class RoomGateway
       this.socketService.clients.splice(index, 1);
     }
   }
+
+  @SubscribeMessage('draw')
+  public handleDraw(
+    client: Socket,
+    data: { roomId: string; drawing: string; seconds: number },
+  ): void {
+    this.socketService.server
+      .to(data.roomId)
+      .emit('drawingChanged', { drawing: data.drawing, seconds: data.seconds });
+  }
 }

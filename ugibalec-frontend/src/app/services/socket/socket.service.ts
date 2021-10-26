@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 
 @Injectable({
@@ -26,5 +25,9 @@ export class SocketService {
 
   public kickPlayer(roomId: string, userId: string): void {
     this.socket.emit('kick', { roomId, userId });
+  }
+
+  public updateDrawing(roomId: string, drawing: string, seconds: number): void {
+    this.socket.emit('draw', { roomId, drawing, seconds });
   }
 }

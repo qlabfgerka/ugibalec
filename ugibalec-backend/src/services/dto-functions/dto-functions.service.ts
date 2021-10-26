@@ -13,6 +13,7 @@ export class DtoFunctionsService {
   ) {}
 
   public userToDTO(user: User): User {
+    if (!user) return undefined;
     const userDTO: User = {
       id: user.id,
       email: user.email,
@@ -87,7 +88,7 @@ export class DtoFunctionsService {
       wordpack: this.wordpackToDTO(await this.getWordpack(room.wordpack)),
       admin: this.userToDTO(await this.getUser(room.admin)),
       currentWord: room.currentWord,
-      drawer: room.drawer,
+      drawer: this.userToDTO(await this.getUser(room.drawer)),
       rounds: room.rounds,
     };
 
@@ -117,6 +118,7 @@ export class DtoFunctionsService {
   }
 
   public async getUser(user: User): Promise<User> {
+    if (!user) return undefined;
     if (user.nickname) {
       return await this.userModel.findById(user.id);
     } else return await this.userModel.findById(user.toString());

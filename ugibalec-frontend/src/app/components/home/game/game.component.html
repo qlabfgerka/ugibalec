@@ -13,6 +13,13 @@
         </th>
         <td mat-cell *matCellDef="let element" class="auto">
           {{ element.player.nickname }}
+          <mat-icon
+            *ngIf="
+              getUser.player.id === room.drawer.id &&
+              getUser.player.id === element.player.id
+            "
+            >edit</mat-icon
+          >
         </td>
       </ng-container>
 
@@ -29,40 +36,42 @@
   </div>
 
   <div class="sixty">
-    <div class="flexbox">
-      <canvas class="canvas"></canvas>
+    <div class="flexbox middle">
+      <h3 *ngIf="!isLoading" class="margin-right">
+        {{ room.currentWord }}
+      </h3>
+      <h5>{{ this.seconds / 1000 }}</h5>
+      <canvas class="canvas" #canvas height="1080px" width="1920px"></canvas>
     </div>
   </div>
 
   <div class="twenty">
     <div class="flexbox">
-      <div class="wide chat margin margin-bottom chat-padding">
-        User 1: asdasd <br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User
-        3: asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2:
-        asdasdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa <br />User
-        1: asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
-        asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
-        asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
-        asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
-        asdasd <br />User 3: asdasdas
-      </div>
+      <div class="wide chat margin margin-bottom chat-padding"></div>
 
-      <form class="padding-side wide">
+      <form
+        class="padding-side wide"
+        [formGroup]="guessForm"
+        (ngSubmit)="guess()"
+      >
         <mat-form-field appearance="fill" class="wide">
           <mat-label>Guess word</mat-label>
-          <input matInput />
+          <input matInput formControlName="guess" />
         </mat-form-field>
 
         <div class="flexbox">
-          <button mat-raised-button color="primary" type="submit">SEND</button>
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="
+              !guessForm.valid ||
+              getUserID === this.room.drawer.id ||
+              getUser.guessed
+            "
+          >
+            SEND
+          </button>
         </div>
       </form>
     </div>

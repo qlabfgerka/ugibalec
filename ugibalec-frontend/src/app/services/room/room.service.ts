@@ -59,4 +59,15 @@ export class RoomService {
       {}
     );
   }
+
+  public guess(
+    roomId: string,
+    guess: string,
+    points: number
+  ): Observable<number> {
+    return this.httpClient.patch<number>(
+      `${this.hostname}/room/guess/${roomId}`,
+      { guess, points }
+    );
+  }
 }
