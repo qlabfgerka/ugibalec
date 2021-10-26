@@ -1,4 +1,4 @@
-import { UserDTO } from '../user/user.model';
+import { PlayerDTO, UserDTO } from '../user/user.model';
 import { WordpackDTO } from '../wordpack/wordpack.model';
 
 export class RoomDTO {
@@ -7,6 +7,9 @@ export class RoomDTO {
   admin?: UserDTO | undefined | null = null;
   password?: string | undefined | null = null;
   maxPlayers: number | undefined | null = null;
-  playerList?: Array<UserDTO> | undefined | null = null;
+  playerList?: Array<PlayerDTO> | undefined | null = null;
   wordpack: WordpackDTO | undefined | null = null;
+  drawer?: UserDTO | undefined | null = null;
+  rounds?: number | undefined | null = null;
+  currentWord?: string | undefined | null = null;
 }

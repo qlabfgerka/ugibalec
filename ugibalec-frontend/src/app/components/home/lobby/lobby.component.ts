@@ -1,11 +1,11 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
-import { ActivatedRoute, NavigationEnd, Params, Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, Subscription } from 'rxjs';
-import { mergeMap, take } from 'rxjs/operators';
+import { finalize, mergeMap, take } from 'rxjs/operators';
 import { RoomDTO } from 'src/app/models/room/room.model';
-import { UserDTO } from 'src/app/models/user/user.model';
+import { PlayerDTO, UserDTO } from 'src/app/models/user/user.model';
 import { WordpackDTO } from 'src/app/models/wordpack/wordpack.model';
 import { RoomService } from 'src/app/services/room/room.service';
 import { SocketService } from 'src/app/services/socket/socket.service';
@@ -17,9 +17,9 @@ import { WordpackService } from 'src/app/services/wordpack/wordpack.service';
   templateUrl: './lobby.component.html',
   styleUrls: ['./lobby.component.scss'],
 })
-export class LobbyComponent implements OnInit, OnDestroy {
+export class LobbyComponent implements OnInit {
   public room: RoomDTO;
-  public dataSource: MatTableDataSource<UserDTO>;
+  public dataSource: MatTableDataSource<PlayerDTO>;
   public displayedColumns: string[] = ['name', 'kick'];
   public roomForm: FormGroup;
   public wordpacks: Array<WordpackDTO>;
@@ -48,22 +48,35 @@ export class LobbyComponent implements OnInit, OnDestroy {
     this.socketService.socket.on('kicked', () => {
       this.router.navigate(['']);
     });
+
+    this.socketService.socket.on('gameStarted', () => {
+      this.router.navigate([`game/${this.room.id}`]);
+    });
   }
 
-  ngOnDestroy(): void {
+  public leaveRoom(): void {
     this.subscription.unsubscribe();
     this.socketService.socket.off('roomChanged');
     this.socketService.socket.off('kicked');
+    this.socketService.socket.off('gameStarted');
 
     this.socketService.leaveRoom(this.room.id);
     this.roomService
       .leaveRoom(this.room.id)
-      .pipe(take(1))
+      .pipe(
+        take(1),
+        finalize(() => {
+          this.router.navigate(['']);
+        })
+      )
       .subscribe(() => {});
   }
 
   public startGame(): void {
-    this.router.navigate(['/game']);
+    this.roomService
+      .startGame(this.room.id)
+      .pipe(take(1))
+      .subscribe(() => {});
   }
 
   public kickPlayer(user: UserDTO): void {

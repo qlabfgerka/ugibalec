@@ -52,4 +52,11 @@ export class RoomService {
       { user }
     );
   }
+
+  public startGame(roomId: string): Observable<boolean> {
+    return this.httpClient.patch<boolean>(
+      `${this.hostname}/room/start/${roomId}`,
+      {}
+    );
+  }
 }

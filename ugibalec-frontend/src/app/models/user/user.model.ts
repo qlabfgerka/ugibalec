@@ -8,3 +8,10 @@ export class UserDTO {
   cumulativePoints: number | undefined | null = null;
   wins: number | undefined | null = null;
 }
+
+export class PlayerDTO {
+  id?: string | undefined | null = null;
+  player: UserDTO | undefined | null = null;
+  guessed: boolean | undefined | null = null;
+  points: number | undefined | null = null;
+}

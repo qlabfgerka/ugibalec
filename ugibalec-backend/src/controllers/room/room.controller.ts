@@ -104,4 +104,19 @@ export class RoomController {
 
     return result;
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('start/:id')
+  public async startGame(
+    @Param('id') roomId: string,
+    @Request() req: any,
+  ): Promise<boolean> {
+    const result = await this.roomService.startGame(roomId, req.user.id);
+
+    if (result) {
+      this.socketService.server.to(roomId).emit('gameStarted', 'game started');
+    }
+
+    return result;
+  }
 }

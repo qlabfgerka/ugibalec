@@ -1,5 +1,5 @@
 <mat-toolbar color="primary" class="header">
-  <span routerLink="" class="pointer">Ugibalec</span>
+  <span routerLink="" class="pointer" (click)="leaveRoom()">Ugibalec</span>
   <span class="spacer"></span>
   <button mat-icon-button *ngIf="isLoggedIn" (click)="logout()">
     <mat-icon>logout</mat-icon>
