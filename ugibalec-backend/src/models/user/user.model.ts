@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import * as mongoose from 'mongoose';
 
 export type UserDocument = User & Document;
 
@@ -35,4 +36,18 @@ export class User {
   refreshTokenExpiry?: Date;
 }
 
+export class Player {
+  id?: string | undefined | null = null;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+  player: User;
+
+  @Prop()
+  points: number;
+
+  @Prop()
+  guessed: boolean;
+}
+
 export const UserSchema = SchemaFactory.createForClass(User);
+export const PlayerSchema = SchemaFactory.createForClass(Player);

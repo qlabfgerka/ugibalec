@@ -12,16 +12,15 @@
           Player name
         </th>
         <td mat-cell *matCellDef="let element" class="auto">
-          {{ element.name }}
+          {{ element.player.nickname }}
+          <mat-icon *ngIf="element.player.id === room.drawer.id">edit</mat-icon>
         </td>
       </ng-container>
 
       <ng-container matColumnDef="points">
         <th mat-header-cell *matHeaderCellDef class="center-text">Points</th>
         <td mat-cell *matCellDef="let element" class="short center-text">
-          <button mat-raised-button color="warn" (click)="joinRoom()">
-            KICK
-          </button>
+          {{ element.points }}
         </td>
       </ng-container>
 
@@ -31,40 +30,55 @@
   </div>
 
   <div class="sixty">
-    <div class="flexbox">
-      <canvas class="canvas"></canvas>
+    <div class="flexbox middle unselectable">
+      <h3
+        *ngIf="!isLoading && getUserID === room.drawer.id"
+        class="margin-right"
+      >
+        {{ room.currentWord }}
+      </h3>
+      <h3
+        *ngIf="!isLoading && getUserID !== room.drawer.id"
+        class="margin-right"
+      >
+        {{ word.split("").join(" ") }}
+      </h3>
+      <h5>{{ this.seconds / 1000 }}</h5>
+      <canvas class="canvas" #canvas height="1080px" width="1920px"></canvas>
     </div>
   </div>
 
   <div class="twenty">
     <div class="flexbox">
-      <div class="wide chat margin margin-bottom chat-padding">
-        User 1: asdasd <br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User
-        3: asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2: asdasdaaaaa <br />User 1: asdasd <br />User 3:
-        asdasdas<br />User 2:
-        asdasdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa <br />User
-        1: asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
-        asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
-        asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
-        asdasd <br />User 3: asdasdas<br />User 2: asdasdaaaaa <br />User 1:
-        asdasd <br />User 3: asdasdas
+      <div class="wide chat margin margin-bottom chat-padding" #scrollable>
+        <p *ngFor="let message of messages">
+          {{ message.user.nickname }}: {{ message.guess }}
+        </p>
       </div>
 
-      <form class="padding-side wide">
+      <form
+        class="padding-side wide"
+        [formGroup]="guessForm"
+        (ngSubmit)="guess()"
+      >
         <mat-form-field appearance="fill" class="wide">
           <mat-label>Guess word</mat-label>
-          <input matInput />
+          <input matInput formControlName="guess" />
         </mat-form-field>
 
         <div class="flexbox">
-          <button mat-raised-button color="primary" type="submit">SEND</button>
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="
+              !guessForm.valid ||
+              getUserID === this.room.drawer.id ||
+              getUser.guessed
+            "
+          >
+            SEND
+          </button>
         </div>
       </form>
     </div>

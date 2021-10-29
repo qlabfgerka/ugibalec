@@ -24,7 +24,7 @@ import { JwtRefreshTokenStrategy } from './strategies/jwt.refreshtoken.strategy'
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
         signOptions: {
-          expiresIn: '30s',
+          expiresIn: '900s',
         },
       }),
     }),

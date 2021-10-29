@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Room, RoomDocument } from 'src/models/room/room.model';
-import { User, UserDocument } from 'src/models/user/user.model';
+import { Player, User, UserDocument } from 'src/models/user/user.model';
 import { Wordpack, WordpackDocument } from 'src/models/wordpack/wordpack.model';
 import { DtoFunctionsService } from 'src/services/dto-functions/dto-functions.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class RoomService {
@@ -30,13 +31,18 @@ export class RoomService {
   public async createRoom(adminId: string, room: Room): Promise<Room> {
     const admin = await this.userModel.findById(adminId);
     const wordpack = await this.wordpackModel.findById(room.wordpack.id);
+    const player: Player = {
+      guessed: false,
+      player: admin._id,
+      points: 0,
+    };
 
     const newRoom = new this.roomModel({
       title: room.title,
       admin: admin,
-      password: room.password,
+      password: await this.generateHash(room.password),
       maxPlayers: room.maxPlayers,
-      playerList: [admin],
+      playerList: [player],
       wordpack: wordpack,
     });
 
@@ -56,7 +62,7 @@ export class RoomService {
       this.dtoFunctions.userToDTO(roomAdmin).id
     ) {
       currentRoom.title = room.title;
-      currentRoom.password = room.password;
+      currentRoom.password = await this.generateHash(room.password);
       currentRoom.wordpack = wordpack;
       currentRoom.maxPlayers = room.maxPlayers;
 
@@ -64,5 +70,195 @@ export class RoomService {
     }
 
     return currentRoom;
+  }
+
+  public async joinRoom(
+    roomId: string,
+    userId: string,
+    password: string,
+  ): Promise<boolean> {
+    const room = await this.roomModel.findById(roomId);
+    const user = await this.userModel.findById(userId);
+    const player: Player = {
+      guessed: false,
+      player: user._id,
+      points: 0,
+    };
+
+    if (room.password && !(await bcrypt.compare(password, room.password)))
+      return false;
+
+    if (room.playerList.length >= room.maxPlayers) return false;
+
+    room.playerList.push(player);
+
+    await room.save();
+
+    return true;
+  }
+
+  public async leaveRoom(roomId: string, userId: string): Promise<boolean> {
+    const room = await this.roomModel.findById(roomId);
+    const user = await this.userModel.findById(userId);
+
+    const index = room.playerList.indexOf(
+      room.playerList.find(
+        (player: Player) => user.id === player.player.toString(),
+      ),
+    );
+
+    if (index > -1) {
+      room.playerList.splice(index, 1);
+
+      if (room.playerList.length === 0) {
+        await room.delete();
+        return true;
+      } else if (room.admin.toString() === user.id) {
+        room.admin = room.playerList[0].player;
+      }
+
+      await room.save();
+
+      return true;
+    }
+
+    return false;
+  }
+
+  public async leaveRooms(userId: string): Promise<boolean> {
+    const user = await this.userModel.findById(userId);
+    const room = await this.roomModel.find({
+      playerList: { $elemMatch: { player: user._id } },
+    });
+
+    room.forEach(async (room: Room) => {
+      await this.leaveRoom(room.id, user.id);
+    });
+
+    return true;
+  }
+
+  public async startGame(roomId: string, userId: string): Promise<boolean> {
+    const room = await this.roomModel.findById(roomId);
+    const user = await this.userModel.findById(userId);
+    const wordpack = await this.wordpackModel.findById(
+      room.wordpack.toString(),
+    );
+    //room.playerList = await this.dtoFunctions.getUsers(room.playerList);
+
+    room.rounds = 0;
+    room.drawer = user;
+    room.currentWord =
+      wordpack.words[Math.floor(Math.random() * wordpack.words.length)];
+    for (let i = 0; i < room.playerList.length; i++) {
+      const p = await this.userModel.findById(
+        room.playerList[i].player.toString(),
+      );
+      ++p.gamesPlayed;
+
+      await p.save();
+
+      room.playerList[i].points = 0;
+      room.playerList[i].guessed = false;
+    }
+
+    room.markModified('playerList');
+    await room.save();
+
+    return true;
+  }
+
+  public async guess(
+    roomId: string,
+    userId: string,
+    guess: string,
+    points: number,
+  ): Promise<[number, User]> {
+    const room = await this.roomModel.findById(roomId);
+    const user = await this.userModel.findById(userId);
+    let guessed = 0;
+
+    if (guess.toLowerCase() !== room.currentWord.toLowerCase())
+      return [0, this.dtoFunctions.userToDTO(user)];
+
+    const index = room.playerList.indexOf(
+      room.playerList.find(
+        (player: Player) => user.id === player.player.toString(),
+      ),
+    );
+
+    const drawerIndex = room.playerList.indexOf(
+      room.playerList.find(
+        (player: Player) => room.drawer.toString() === player.player.toString(),
+      ),
+    );
+
+    if (index > -1 && !room.playerList[index].guessed) {
+      const player = await this.userModel.findById(
+        room.playerList[index].player.toString(),
+      );
+      const drawer = await this.userModel.findById(room.drawer.toString());
+      room.playerList[index].points += points;
+      player.cumulativePoints += points;
+      drawer.cumulativePoints += Math.floor(points / 2);
+      room.playerList[index].guessed = true;
+      room.playerList[drawerIndex].points += Math.floor(points / 2);
+
+      room.markModified('playerList');
+      await player.save();
+      await room.save();
+    }
+
+    for (let i = 0; i < room.playerList.length; i++) {
+      if (room.playerList[i].guessed) ++guessed;
+    }
+
+    return [
+      guessed === room.playerList.length - 1 ? 2 : 1,
+      this.dtoFunctions.userToDTO(user),
+    ];
+  }
+
+  public async updateGame(roomId: string): Promise<boolean> {
+    const room = await this.roomModel.findById(roomId);
+    const wordpack = await this.wordpackModel.findById(
+      room.wordpack.toString(),
+    );
+    ++room.rounds;
+
+    if (room.rounds === room.playerList.length) {
+      room.drawer = null;
+      room.currentWord = null;
+      room.playerList = room.playerList.sort((a, b) => b.points - a.points);
+      const player = await this.userModel.findById(
+        room.playerList[0].player.toString(),
+      );
+      ++player.wins;
+
+      await player.save();
+      await room.save();
+
+      return false;
+    }
+
+    room.drawer = room.playerList[room.rounds].player;
+    room.currentWord =
+      wordpack.words[Math.floor(Math.random() * wordpack.words.length)];
+    for (let i = 0; i < room.playerList.length; i++) {
+      room.playerList[i].guessed = false;
+    }
+
+    room.markModified('playerList');
+    await room.save();
+    return true;
+  }
+
+  private async generateHash(password: string): Promise<string> {
+    if (password === '') return '';
+
+    const salt = await bcrypt.genSalt();
+    const hash = await bcrypt.hash(password, salt);
+
+    return hash;
   }
 }

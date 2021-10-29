@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
-import { ActivatedRoute, Params, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
-import { mergeMap, take } from 'rxjs/operators';
+import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin, Subscription } from 'rxjs';
+import { finalize, first, mergeMap, take } from 'rxjs/operators';
 import { RoomDTO } from 'src/app/models/room/room.model';
-import { UserDTO } from 'src/app/models/user/user.model';
+import { PlayerDTO, UserDTO } from 'src/app/models/user/user.model';
 import { WordpackDTO } from 'src/app/models/wordpack/wordpack.model';
 import { RoomService } from 'src/app/services/room/room.service';
+import { SocketService } from 'src/app/services/socket/socket.service';
+import { AuthService } from 'src/app/services/user/auth/auth.service';
 import { WordpackService } from 'src/app/services/wordpack/wordpack.service';
 
 @Component({
@@ -17,56 +19,73 @@ import { WordpackService } from 'src/app/services/wordpack/wordpack.service';
 })
 export class LobbyComponent implements OnInit {
   public room: RoomDTO;
-  public dataSource: MatTableDataSource<UserDTO>;
+  public dataSource: MatTableDataSource<PlayerDTO>;
   public displayedColumns: string[] = ['name', 'kick'];
   public roomForm: FormGroup;
   public wordpacks: Array<WordpackDTO>;
   public isLoading: boolean;
+  public userId: string;
+  private subscription: Subscription;
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly roomService: RoomService,
     private readonly wordpackService: WordpackService,
-    private readonly formBuilder: FormBuilder
+    private readonly formBuilder: FormBuilder,
+    private readonly socketService: SocketService,
+    private readonly authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    this.isLoading = true;
-    this.route.params
+    this.userId = this.authService.getUserID();
+    this.refreshRoom(true);
+
+    this.socketService.socket.on('roomChanged', () => {
+      this.refreshRoom();
+    });
+
+    this.socketService.socket.on('kicked', () => {
+      this.router.navigate(['']);
+    });
+
+    this.socketService.socket.on('gameStarted', () => {
+      this.router.navigate([`game/${this.room.id}`]);
+    });
+  }
+
+  public leaveRoom(): void {
+    this.subscription.unsubscribe();
+    this.socketService.socket.off('roomChanged');
+    this.socketService.socket.off('kicked');
+    this.socketService.socket.off('gameStarted');
+
+    this.socketService.leaveRoom(this.room.id);
+    this.roomService
+      .leaveRoom(this.room.id)
       .pipe(
-        mergeMap((params: Params) =>
-          forkJoin([
-            this.roomService.getRoom(params.id).pipe(take(1)),
-            this.wordpackService.getWordpacks().pipe(take(1)),
-          ])
-        )
+        take(1),
+        finalize(() => {
+          this.router.navigate(['']);
+        })
       )
-      .subscribe((response) => {
-        this.room = response[0];
-        this.wordpacks = response[1];
-        this.dataSource = new MatTableDataSource(this.room.playerList);
-
-        this.roomForm = this.formBuilder.group({
-          title: [this.room.title, [Validators.required]],
-          password: [this.room.password],
-          maxPlayers: [
-            this.room.maxPlayers,
-            [Validators.required, Validators.min(3), Validators.max(8)],
-          ],
-          wordpack: [this.room.wordpack.id, [Validators.required]],
-        });
-
-        this.isLoading = false;
-      });
+      .subscribe(() => {});
   }
 
   public startGame(): void {
-    this.router.navigate(['/game']);
+    this.roomService
+      .startGame(this.room.id)
+      .pipe(take(1))
+      .subscribe(() => {});
   }
 
-  public kickPlayer(id: string): void {
-    console.log(id);
+  public kickPlayer(user: UserDTO): void {
+    this.roomService
+      .kickPlayer(this.room.id, user)
+      .pipe(take(1))
+      .subscribe(() => {
+        this.socketService.kickPlayer(this.room.id, user.id);
+      });
   }
 
   public updateRoom(): void {
@@ -81,13 +100,54 @@ export class LobbyComponent implements OnInit {
       this.roomService
         .updateRoom(this.room)
         .pipe(take(1))
-        .subscribe((room: RoomDTO) => {
-          this.room = room;
+        .subscribe(() => {
+          this.refreshRoom();
         });
     }
   }
 
   public get errorControl() {
     return this.roomForm.controls;
+  }
+
+  private refreshRoom(firstConnect: boolean = false): void {
+    this.isLoading = true;
+
+    this.subscription = this.route.paramMap
+      .pipe(
+        take(1),
+        mergeMap((paramMap) => {
+          return forkJoin([
+            this.roomService.getRoom(paramMap.get('id')).pipe(take(1)),
+            this.wordpackService.getWordpacks().pipe(take(1)),
+          ]);
+        })
+      )
+      .subscribe((response) => {
+        this.room = response[0];
+        this.wordpacks = response[1];
+        this.dataSource = new MatTableDataSource(this.room.playerList);
+
+        if (firstConnect) {
+          this.socketService.joinRoom(
+            this.room.id,
+            this.authService.getUserID()
+          );
+        }
+
+        this.roomForm = this.formBuilder.group({
+          title: [this.room.title, [Validators.required]],
+          password: [this.room.password],
+          maxPlayers: [
+            this.room.maxPlayers,
+            [Validators.required, Validators.min(3), Validators.max(8)],
+          ],
+          wordpack: [this.room.wordpack.id, [Validators.required]],
+        });
+
+        if (this.room.admin.id !== this.userId) this.roomForm.disable();
+
+        this.isLoading = false;
+      });
   }
 }

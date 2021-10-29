@@ -60,6 +60,10 @@ export class AuthService {
     return this.getJWTToken() !== '';
   }
 
+  public getUserID(): string {
+    return JSON.parse(atob(this.getJWTToken().split('.')[1])).id;
+  }
+
   private getRefreshToken(): string {
     return localStorage.getItem('REFRESH_TOKEN');
   }

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Room } from 'src/models/room/room.model';
-import { User, UserDocument } from 'src/models/user/user.model';
+import { Player, User, UserDocument } from 'src/models/user/user.model';
 import { Wordpack, WordpackDocument } from 'src/models/wordpack/wordpack.model';
 
 @Injectable()
@@ -13,6 +13,7 @@ export class DtoFunctionsService {
   ) {}
 
   public userToDTO(user: User): User {
+    if (!user) return undefined;
     const userDTO: User = {
       id: user.id,
       email: user.email,
@@ -34,6 +35,27 @@ export class DtoFunctionsService {
     });
 
     return usersDTO;
+  }
+
+  public async playerToDTO(player: Player): Promise<Player> {
+    const playerToDTO: Player = {
+      id: player.id,
+      player: this.userToDTO(await this.getUser(player.player)),
+      guessed: player.guessed,
+      points: player.points,
+    };
+
+    return playerToDTO;
+  }
+
+  public async playersToDTO(players: Array<Player>): Promise<Array<Player>> {
+    const playersDTO = new Array<Player>();
+
+    for (const player of players) {
+      playersDTO.push(await this.playerToDTO(player));
+    }
+
+    return playersDTO;
   }
 
   public wordpackToDTO(wordpack: Wordpack): Wordpack {
@@ -59,12 +81,15 @@ export class DtoFunctionsService {
   public async roomToDTO(room: Room): Promise<Room> {
     const roomDTO: Room = {
       id: room.id,
-      playerList: this.usersToDTO(await this.getUsers(room.playerList)),
+      playerList: await this.playersToDTO(room.playerList),
       maxPlayers: room.maxPlayers,
       password: room.password,
       title: room.title,
       wordpack: this.wordpackToDTO(await this.getWordpack(room.wordpack)),
       admin: this.userToDTO(await this.getUser(room.admin)),
+      currentWord: room.currentWord,
+      drawer: this.userToDTO(await this.getUser(room.drawer)),
+      rounds: room.rounds,
     };
 
     return roomDTO;
@@ -93,6 +118,7 @@ export class DtoFunctionsService {
   }
 
   public async getUser(user: User): Promise<User> {
+    if (!user) return undefined;
     if (user.nickname) {
       return await this.userModel.findById(user.id);
     } else return await this.userModel.findById(user.toString());

@@ -5,6 +5,8 @@ import { AuthModule } from './controllers/user/auth/auth.module';
 import { DtoFunctionsModule } from './services/dto-functions/dto-functions.module';
 import { RoomModule } from './controllers/room/room.module';
 import { WordpackModule } from './controllers/wordpack/wordpack.module';
+import { RoomGateway } from './gateways/room.gateway';
+import { SocketModule } from './services/socket/socket.module';
 
 @Module({
   imports: [
@@ -20,8 +22,9 @@ import { WordpackModule } from './controllers/wordpack/wordpack.module';
     DtoFunctionsModule,
     RoomModule,
     WordpackModule,
+    SocketModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [RoomGateway],
 })
 export class AppModule {}
