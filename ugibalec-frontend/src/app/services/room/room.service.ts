@@ -46,6 +46,10 @@ export class RoomService {
     );
   }
 
+  public leaveRooms(): Observable<boolean> {
+    return this.httpClient.patch<boolean>(`${this.hostname}/room/leave`, {});
+  }
+
   public kickPlayer(roomId: string, user: UserDTO): Observable<boolean> {
     return this.httpClient.patch<boolean>(
       `${this.hostname}/room/kick/${roomId}`,
@@ -68,6 +72,13 @@ export class RoomService {
     return this.httpClient.patch<number>(
       `${this.hostname}/room/guess/${roomId}`,
       { guess, points }
+    );
+  }
+
+  public updateGame(roomId: string): Observable<void> {
+    return this.httpClient.patch<void>(
+      `${this.hostname}/room/updateGame/${roomId}`,
+      {}
     );
   }
 }

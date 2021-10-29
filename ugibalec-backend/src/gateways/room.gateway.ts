@@ -23,12 +23,23 @@ export class RoomGateway
     }>();
   }
 
-  handleConnection(client: any, ...args: any[]): void {
+  handleConnection(client: any): void {
     console.log(`${client.id} connected`);
   }
 
   handleDisconnect(client: any): void {
-    console.log(`${client.id} disconnected`);
+    const index = this.socketService.clients.indexOf(
+      this.socketService.clients.find(
+        (currentClient) => currentClient.client.id === client.id,
+      ),
+    );
+
+    if (index > -1) {
+      this.socketService.clients[index].client.leave(
+        this.socketService.clients[index].roomId,
+      );
+      this.socketService.clients.splice(index, 1);
+    }
   }
 
   @SubscribeMessage('joinRoom')
@@ -64,7 +75,7 @@ export class RoomGateway
 
   @SubscribeMessage('kick')
   public handleKick(
-    client: Socket,
+    _client: Socket,
     data: { roomId: string; userId: string },
   ): void {
     const index = this.socketService.clients.indexOf(
@@ -84,11 +95,21 @@ export class RoomGateway
 
   @SubscribeMessage('draw')
   public handleDraw(
-    client: Socket,
+    _client: Socket,
     data: { roomId: string; drawing: string; seconds: number },
   ): void {
     this.socketService.server
       .to(data.roomId)
       .emit('drawingChanged', { drawing: data.drawing, seconds: data.seconds });
+  }
+
+  @SubscribeMessage('help')
+  public handleHelp(
+    _client: Socket,
+    data: { roomId: string; word: string; index: number },
+  ): void {
+    this.socketService.server
+      .to(data.roomId)
+      .emit('getHelp', { character: data.word[data.index], index: data.index });
   }
 }

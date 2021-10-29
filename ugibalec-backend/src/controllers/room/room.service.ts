@@ -125,6 +125,19 @@ export class RoomService {
     return false;
   }
 
+  public async leaveRooms(userId: string): Promise<boolean> {
+    const user = await this.userModel.findById(userId);
+    const room = await this.roomModel.find({
+      playerList: { $elemMatch: { player: user._id } },
+    });
+
+    room.forEach(async (room: Room) => {
+      await this.leaveRoom(room.id, user.id);
+    });
+
+    return true;
+  }
+
   public async startGame(roomId: string, userId: string): Promise<boolean> {
     const room = await this.roomModel.findById(roomId);
     const user = await this.userModel.findById(userId);
@@ -133,17 +146,23 @@ export class RoomService {
     );
     //room.playerList = await this.dtoFunctions.getUsers(room.playerList);
 
+    room.rounds = 0;
     room.drawer = user;
     room.currentWord =
       wordpack.words[Math.floor(Math.random() * wordpack.words.length)];
-    room.playerList.forEach(async (player: Player) => {
-      const p = await this.userModel.findById(player.player.toString());
-      p.gamesPlayed++;
-      player.points = 0;
+    for (let i = 0; i < room.playerList.length; i++) {
+      const p = await this.userModel.findById(
+        room.playerList[i].player.toString(),
+      );
+      ++p.gamesPlayed;
 
       await p.save();
-    });
 
+      room.playerList[i].points = 0;
+      room.playerList[i].guessed = false;
+    }
+
+    room.markModified('playerList');
     await room.save();
 
     return true;
@@ -154,12 +173,13 @@ export class RoomService {
     userId: string,
     guess: string,
     points: number,
-  ): Promise<number> {
+  ): Promise<[number, User]> {
     const room = await this.roomModel.findById(roomId);
     const user = await this.userModel.findById(userId);
     let guessed = 0;
 
-    if (guess.toLowerCase() !== room.currentWord.toLowerCase()) return 0;
+    if (guess.toLowerCase() !== room.currentWord.toLowerCase())
+      return [0, this.dtoFunctions.userToDTO(user)];
 
     const index = room.playerList.indexOf(
       room.playerList.find(
@@ -193,7 +213,44 @@ export class RoomService {
       if (room.playerList[i].guessed) ++guessed;
     }
 
-    return guessed === room.playerList.length - 1 ? 2 : 1;
+    return [
+      guessed === room.playerList.length - 1 ? 2 : 1,
+      this.dtoFunctions.userToDTO(user),
+    ];
+  }
+
+  public async updateGame(roomId: string): Promise<boolean> {
+    const room = await this.roomModel.findById(roomId);
+    const wordpack = await this.wordpackModel.findById(
+      room.wordpack.toString(),
+    );
+    ++room.rounds;
+
+    if (room.rounds === room.playerList.length) {
+      room.drawer = null;
+      room.currentWord = null;
+      room.playerList = room.playerList.sort((a, b) => b.points - a.points);
+      const player = await this.userModel.findById(
+        room.playerList[0].player.toString(),
+      );
+      ++player.wins;
+
+      await player.save();
+      await room.save();
+
+      return false;
+    }
+
+    room.drawer = room.playerList[room.rounds].player;
+    room.currentWord =
+      wordpack.words[Math.floor(Math.random() * wordpack.words.length)];
+    for (let i = 0; i < room.playerList.length; i++) {
+      room.playerList[i].guessed = false;
+    }
+
+    room.markModified('playerList');
+    await room.save();
+    return true;
   }
 
   private async generateHash(password: string): Promise<string> {

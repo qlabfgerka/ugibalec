@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { take } from 'rxjs/operators';
+import { RoomService } from 'src/app/services/room/room.service';
 import { SocketService } from 'src/app/services/socket/socket.service';
 import { AuthService } from 'src/app/services/user/auth/auth.service';
 
@@ -13,6 +14,7 @@ export class HeaderComponent implements OnInit {
   constructor(
     private readonly authService: AuthService,
     private readonly socketService: SocketService,
+    private readonly roomService: RoomService,
     private readonly router: Router
   ) {}
 
@@ -34,9 +36,11 @@ export class HeaderComponent implements OnInit {
   }
 
   public leaveRoom(): void {
-    this.socketService.socket.off('roomChanged');
-    this.socketService.socket.off('kicked');
-    this.socketService.socket.off('gameStarted');
-    this.socketService.socket.off('drawingChanged');
+    this.roomService
+      .leaveRooms()
+      .pipe(take(1))
+      .subscribe(() => {
+        this.socketService.stopListening();
+      });
   }
 }

@@ -15,7 +15,10 @@ import { AuthService } from 'src/app/services/user/auth/auth.service';
   styleUrls: ['./game.component.scss'],
 })
 export class GameComponent implements OnInit {
-  @ViewChild('canvas', { static: false }) canvas: ElementRef<HTMLCanvasElement>;
+  @ViewChild('canvas', { static: false })
+  public canvas: ElementRef<HTMLCanvasElement>;
+  @ViewChild('scrollable', { static: false })
+  public scrollableDiv: ElementRef<HTMLDivElement>;
 
   public displayedColumns: string[] = ['name', 'points'];
   public dataSource: MatTableDataSource<PlayerDTO>;
@@ -27,6 +30,11 @@ export class GameComponent implements OnInit {
   public counter: number;
   public seconds: number;
   public guessForm: FormGroup;
+  public boundMouseUp: any;
+  public boundMouseDown: any;
+  public boundMoseMove: any;
+  public messages: Array<{ user: UserDTO; guess: string }>;
+  public word: string;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -38,18 +46,19 @@ export class GameComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.messages = new Array<{ user: UserDTO; guess: string }>();
     this.guessForm = this.formBuilder.group({
       guess: ['', [Validators.required]],
     });
 
-    this.refreshRoom(true);
+    this.refreshRoom(true, true);
 
     this.socketService.socket.on(
       'drawingChanged',
       (data: { drawing: string; seconds: number }) => {
         const image = new Image();
         image.onload = () => {
-          this.context.drawImage(image, 0, 0);
+          if (image) this.context.drawImage(image, 0, 0);
         };
         image.src = data.drawing;
         if (data.seconds % 1000 === 0) {
@@ -61,6 +70,38 @@ export class GameComponent implements OnInit {
     this.socketService.socket.on('guessed', () => {
       this.refreshRoom();
     });
+
+    this.socketService.socket.on(
+      'wrong',
+      (data: { user: UserDTO; guess: string }) => {
+        this.messages.push(data);
+        this.scrollableDiv.nativeElement.scrollTop =
+          this.scrollableDiv.nativeElement.scrollHeight;
+      }
+    );
+
+    this.socketService.socket.on('roundOver', () => {
+      setTimeout(() => {
+        this.refreshRoom(true);
+      }, 5000);
+    });
+
+    this.socketService.socket.on('gameOver', () => {
+      setTimeout(() => {
+        this.router.navigate([`lobby/${this.room.id}`]);
+      }, 10000);
+    });
+
+    this.socketService.socket.on(
+      'getHelp',
+      (data: { character: string; index: number }) => {
+        this.word = this.replaceCharacter(
+          this.word,
+          data.character,
+          data.index
+        );
+      }
+    );
   }
 
   public guess(): void {
@@ -72,8 +113,8 @@ export class GameComponent implements OnInit {
           Math.floor(this.seconds / 1000)
         )
         .pipe(take(1))
-        .subscribe((result: number) => {
-          console.log(result);
+        .subscribe(() => {
+          this.guessForm.reset();
         });
     }
   }
@@ -88,7 +129,7 @@ export class GameComponent implements OnInit {
     );
   }
 
-  private refreshRoom(init: boolean = false): void {
+  private refreshRoom(init: boolean = false, firstRun: boolean = false): void {
     this.isLoading = true;
     if (init) {
       this.counter = 60000 * 1;
@@ -113,57 +154,121 @@ export class GameComponent implements OnInit {
           this.initCanvas();
         }
 
+        if (firstRun) {
+          this.socketService.joinRoom(
+            this.room.id,
+            this.authService.getUserID()
+          );
+        }
+
         this.isLoading = false;
       });
   }
 
   private initCanvas(): void {
+    this.word = '';
+    for (let i = 0; i < this.room.currentWord.length; i++) {
+      this.word += '_';
+    }
     this.drawing = false;
     this.context = this.canvas.nativeElement.getContext('2d');
 
+    this.context.clearRect(0, 0, 1920, 1080);
+
     if (this.room.drawer.id === this.getUserID) {
-      if (this.room.drawer.id === this.getUserID) {
-        this.interval = setInterval(() => {
-          this.counter -= 50;
-          this.socketService.updateDrawing(
+      this.canvas.nativeElement.addEventListener(
+        'mouseup',
+        (this.boundMouseUp = this.mouseUpEvent.bind(this))
+      );
+      this.canvas.nativeElement.addEventListener(
+        'mousedown',
+        (this.boundMouseDown = this.mouseDownEvent.bind(this))
+      );
+      this.canvas.nativeElement.addEventListener(
+        'mousemove',
+        (this.boundMoseMove = this.mouseMoveEvent.bind(this))
+      );
+
+      this.interval = setInterval(() => {
+        this.counter -= 50;
+        this.socketService.updateDrawing(
+          this.room.id,
+          this.canvas.nativeElement.toDataURL(),
+          this.counter
+        );
+        if ((this.counter / 1000) % (60 / this.word.length) === 0) {
+          this.socketService.getLetter(
             this.room.id,
-            this.canvas.nativeElement.toDataURL(),
-            this.counter
+            this.room.currentWord,
+            Math.floor(
+              Math.random() * (this.room.currentWord.length - 1 - 0 + 1) + 0
+            )
           );
-          if (this.counter === 0) console.log('time up');
-        }, 50);
-      } else {
-        if (this.interval) clearInterval(this.interval);
-      }
-
-      this.canvas.nativeElement.addEventListener('mouseup', () => {
-        this.drawing = false;
-        this.context.beginPath();
-      });
-      this.canvas.nativeElement.addEventListener('mousedown', () => {
-        this.drawing = true;
-      });
-      this.canvas.nativeElement.addEventListener('mousemove', (event) => {
-        if (!this.drawing) return;
-
-        const rect = this.canvas.nativeElement.getBoundingClientRect();
-        const x = Math.round(
-          ((event.clientX - rect.left) / (rect.right - rect.left)) *
-            this.canvas.nativeElement.width
-        );
-        const y = Math.round(
-          ((event.clientY - rect.top) / (rect.bottom - rect.top)) *
-            this.canvas.nativeElement.height
-        );
-
-        this.context.lineWidth = 5;
-        this.context.lineCap = 'round';
-
-        this.context.lineTo(x, y);
-        this.context.stroke();
-        this.context.beginPath();
-        this.context.moveTo(x, y);
-      });
+        }
+        if (this.counter === 0) {
+          clearInterval(this.interval);
+          this.roomService
+            .updateGame(this.room.id)
+            .pipe(take(1))
+            .subscribe(() => {});
+        }
+      }, 50);
+    } else {
+      if (this.interval) clearInterval(this.interval);
+      this.canvas.nativeElement.removeEventListener(
+        'mouseup',
+        this.boundMouseUp
+      );
+      this.canvas.nativeElement.removeEventListener(
+        'mousedown',
+        this.boundMouseDown
+      );
+      this.canvas.nativeElement.removeEventListener(
+        'mousemove',
+        this.boundMoseMove
+      );
     }
+  }
+
+  private mouseUpEvent(): void {
+    this.drawing = false;
+    this.context.beginPath();
+  }
+
+  private mouseDownEvent(): void {
+    this.drawing = true;
+  }
+
+  private mouseMoveEvent(event: any): void {
+    if (!this.drawing) return;
+
+    const rect = this.canvas.nativeElement.getBoundingClientRect();
+    const x = Math.round(
+      ((event.clientX - rect.left) / (rect.right - rect.left)) *
+        this.canvas.nativeElement.width
+    );
+    const y = Math.round(
+      ((event.clientY - rect.top) / (rect.bottom - rect.top)) *
+        this.canvas.nativeElement.height
+    );
+
+    this.context.lineWidth = 5;
+    this.context.lineCap = 'round';
+
+    this.context.lineTo(x, y);
+    this.context.stroke();
+    this.context.beginPath();
+    this.context.moveTo(x, y);
+  }
+
+  private replaceCharacter(
+    string: string,
+    character: string,
+    index: number
+  ): string {
+    const start = string.substr(0, index);
+    const end = string.substr(index + 1);
+
+    return start + character + end;
   }
 }

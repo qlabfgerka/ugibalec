@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, Subscription } from 'rxjs';
-import { finalize, mergeMap, take } from 'rxjs/operators';
+import { finalize, first, mergeMap, take } from 'rxjs/operators';
 import { RoomDTO } from 'src/app/models/room/room.model';
 import { PlayerDTO, UserDTO } from 'src/app/models/user/user.model';
 import { WordpackDTO } from 'src/app/models/wordpack/wordpack.model';
@@ -39,7 +39,7 @@ export class LobbyComponent implements OnInit {
 
   ngOnInit(): void {
     this.userId = this.authService.getUserID();
-    this.refreshRoom();
+    this.refreshRoom(true);
 
     this.socketService.socket.on('roomChanged', () => {
       this.refreshRoom();
@@ -110,7 +110,7 @@ export class LobbyComponent implements OnInit {
     return this.roomForm.controls;
   }
 
-  private refreshRoom(): void {
+  private refreshRoom(firstConnect: boolean = false): void {
     this.isLoading = true;
 
     this.subscription = this.route.paramMap
@@ -127,6 +127,13 @@ export class LobbyComponent implements OnInit {
         this.room = response[0];
         this.wordpacks = response[1];
         this.dataSource = new MatTableDataSource(this.room.playerList);
+
+        if (firstConnect) {
+          this.socketService.joinRoom(
+            this.room.id,
+            this.authService.getUserID()
+          );
+        }
 
         this.roomForm = this.formBuilder.group({
           title: [this.room.title, [Validators.required]],

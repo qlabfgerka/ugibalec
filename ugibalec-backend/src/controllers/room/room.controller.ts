@@ -89,6 +89,12 @@ export class RoomController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch('leave')
+  public async leaveRooms(@Request() req: any): Promise<boolean> {
+    return await this.roomService.leaveRooms(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch('kick/:id')
   public async kickPlayer(
     @Param('id') roomId: string,
@@ -134,15 +140,33 @@ export class RoomController {
      * 1 - correct guess
      * 2 - everybody guessed
      */
-    const result = await this.roomService.guess(
+    const [result, user] = await this.roomService.guess(
       roomId,
       req.user.id,
       guess,
       points,
     );
 
-    if (result > 0) {
+    if (result == 1) {
       this.socketService.server.to(roomId).emit('guessed', 'user guessed');
+    } else if (result == 2) {
+      await this.updateGame(roomId);
+    } else {
+      this.socketService.server.to(roomId).emit('wrong', { user, guess });
+    }
+
+    return result;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('updateGame/:id')
+  public async updateGame(@Param('id') roomId: string): Promise<boolean> {
+    const result = await this.roomService.updateGame(roomId);
+
+    if (!result) {
+      this.socketService.server.to(roomId).emit('gameOver', 'game over');
+    } else {
+      this.socketService.server.to(roomId).emit('roundOver', 'round over');
     }
 
     return result;

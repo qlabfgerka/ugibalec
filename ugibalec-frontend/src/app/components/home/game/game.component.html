@@ -13,13 +13,7 @@
         </th>
         <td mat-cell *matCellDef="let element" class="auto">
           {{ element.player.nickname }}
-          <mat-icon
-            *ngIf="
-              getUser.player.id === room.drawer.id &&
-              getUser.player.id === element.player.id
-            "
-            >edit</mat-icon
-          >
+          <mat-icon *ngIf="element.player.id === room.drawer.id">edit</mat-icon>
         </td>
       </ng-container>
 
@@ -36,9 +30,18 @@
   </div>
 
   <div class="sixty">
-    <div class="flexbox middle">
-      <h3 *ngIf="!isLoading" class="margin-right">
+    <div class="flexbox middle unselectable">
+      <h3
+        *ngIf="!isLoading && getUserID === room.drawer.id"
+        class="margin-right"
+      >
         {{ room.currentWord }}
+      </h3>
+      <h3
+        *ngIf="!isLoading && getUserID !== room.drawer.id"
+        class="margin-right"
+      >
+        {{ word.split("").join(" ") }}
       </h3>
       <h5>{{ this.seconds / 1000 }}</h5>
       <canvas class="canvas" #canvas height="1080px" width="1920px"></canvas>
@@ -47,7 +50,11 @@
 
   <div class="twenty">
     <div class="flexbox">
-      <div class="wide chat margin margin-bottom chat-padding"></div>
+      <div class="wide chat margin margin-bottom chat-padding" #scrollable>
+        <p *ngFor="let message of messages">
+          {{ message.user.nickname }}: {{ message.guess }}
+        </p>
+      </div>
 
       <form
         class="padding-side wide"

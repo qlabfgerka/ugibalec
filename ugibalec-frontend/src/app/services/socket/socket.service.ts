@@ -30,4 +30,20 @@ export class SocketService {
   public updateDrawing(roomId: string, drawing: string, seconds: number): void {
     this.socket.emit('draw', { roomId, drawing, seconds });
   }
+
+  public getLetter(roomId: string, word: string, index: number): void {
+    this.socket.emit('help', { roomId, word, index });
+  }
+
+  public stopListening(): void {
+    this.socket.off('roomChanged');
+    this.socket.off('kicked');
+    this.socket.off('gameStarted');
+    this.socket.off('drawingChanged');
+    this.socket.off('guessed');
+    this.socket.off('roundOver');
+    this.socket.off('gameOver');
+    this.socket.off('wrong');
+    this.socket.off('getHelp');
+  }
 }
