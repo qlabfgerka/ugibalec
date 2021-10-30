@@ -31,19 +31,21 @@
 
   <div class="sixty">
     <div class="flexbox middle unselectable">
-      <h3
-        *ngIf="!isLoading && getUserID === room.drawer.id"
-        class="margin-right"
-      >
-        {{ room.currentWord }}
-      </h3>
-      <h3
-        *ngIf="!isLoading && getUserID !== room.drawer.id"
-        class="margin-right"
-      >
-        {{ word.split("").join(" ") }}
-      </h3>
-      <h5>{{ this.seconds / 1000 }}</h5>
+      <div [ngClass]="{ shaker: guessed }" class="flexbox">
+        <h3
+          *ngIf="!isLoading && getUserID === room.drawer.id"
+          class="margin-right"
+        >
+          {{ room.currentWord }}
+        </h3>
+        <h3
+          *ngIf="!isLoading && getUserID !== room.drawer.id"
+          class="margin-right"
+        >
+          {{ word.split("").join(" ") }}
+        </h3>
+        <h5>{{ this.seconds / 1000 }}</h5>
+      </div>
       <canvas class="canvas" #canvas height="1080px" width="1920px"></canvas>
     </div>
   </div>

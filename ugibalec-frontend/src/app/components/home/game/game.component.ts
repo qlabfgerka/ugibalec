@@ -17,6 +17,7 @@ import { AuthService } from 'src/app/services/user/auth/auth.service';
 export class GameComponent implements OnInit {
   @ViewChild('canvas', { static: false })
   public canvas: ElementRef<HTMLCanvasElement>;
+
   @ViewChild('scrollable', { static: false })
   public scrollableDiv: ElementRef<HTMLDivElement>;
 
@@ -35,6 +36,7 @@ export class GameComponent implements OnInit {
   public boundMoseMove: any;
   public messages: Array<{ user: UserDTO; guess: string }>;
   public word: string;
+  public guessed: boolean = false;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -82,6 +84,9 @@ export class GameComponent implements OnInit {
 
     this.socketService.socket.on('roundOver', () => {
       setTimeout(() => {
+        this.guessed = false;
+
+        this.context.clearRect(0, 0, 1920, 1080);
         this.refreshRoom(true);
       }, 5000);
     });
@@ -95,11 +100,13 @@ export class GameComponent implements OnInit {
     this.socketService.socket.on(
       'getHelp',
       (data: { character: string; index: number }) => {
-        this.word = this.replaceCharacter(
-          this.word,
-          data.character,
-          data.index
-        );
+        if (!this.guessed) {
+          this.word = this.replaceCharacter(
+            this.word,
+            data.character,
+            data.index
+          );
+        }
       }
     );
   }
@@ -113,7 +120,12 @@ export class GameComponent implements OnInit {
           Math.floor(this.seconds / 1000)
         )
         .pipe(take(1))
-        .subscribe(() => {
+        .subscribe((result: number) => {
+          if (result > 0) {
+            this.guessed = true;
+            this.word = this.room.currentWord;
+            this.playSound();
+          }
           this.guessForm.reset();
         });
     }
@@ -172,8 +184,6 @@ export class GameComponent implements OnInit {
     }
     this.drawing = false;
     this.context = this.canvas.nativeElement.getContext('2d');
-
-    this.context.clearRect(0, 0, 1920, 1080);
 
     if (this.room.drawer.id === this.getUserID) {
       this.canvas.nativeElement.addEventListener(
@@ -270,5 +280,13 @@ export class GameComponent implements OnInit {
     const end = string.substr(index + 1);
 
     return start + character + end;
+  }
+
+  private playSound() {
+    const audio = new Audio(
+      'assets/sounds/mixkit-unlock-game-notification-253.wav'
+    );
+    audio.load();
+    audio.play();
   }
 }
