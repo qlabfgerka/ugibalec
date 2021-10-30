@@ -44,6 +44,11 @@ export class HeaderComponent implements OnInit {
       });
   }
 
+  public openProfile(): void {
+    this.leaveRoom();
+    this.router.navigate([`profile/${this.getUserID}`]);
+  }
+
   public get getUserID(): string {
     return this.authService.getUserID();
   }

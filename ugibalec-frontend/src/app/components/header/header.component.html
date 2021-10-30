@@ -3,18 +3,13 @@
   <span
     [routerLink]="'wordpacks'"
     class="pointer"
-    (click)="leaveRoom()"
     *ngIf="isLoggedIn"
+    (click)="leaveRoom()"
     class="margin-left"
     >Wordpacks</span
   >
   <span class="spacer"></span>
-  <button
-    mat-icon-button
-    *ngIf="isLoggedIn"
-    (click)="leaveRoom()"
-    [routerLink]="['profile', getUserID]"
-  >
+  <button mat-icon-button *ngIf="isLoggedIn" (click)="openProfile()">
     <mat-icon>person</mat-icon>
   </button>
   <button mat-icon-button *ngIf="isLoggedIn" (click)="logout()">
