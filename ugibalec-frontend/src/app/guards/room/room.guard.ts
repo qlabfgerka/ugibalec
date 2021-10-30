@@ -5,9 +5,8 @@ import {
   Router,
   UrlTree,
 } from '@angular/router';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
-import { RoomDTO } from 'src/app/models/room/room.model';
 import { PlayerDTO } from 'src/app/models/user/user.model';
 import { RoomService } from 'src/app/services/room/room.service';
 import { AuthService } from 'src/app/services/user/auth/auth.service';

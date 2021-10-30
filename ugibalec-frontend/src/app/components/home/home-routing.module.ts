@@ -25,6 +25,20 @@ const routes: Routes = [
           import('./game/game.module').then((m) => m.GameModule),
         canActivate: [RoomGuard],
       },
+      {
+        path: `profile/:id`,
+        loadChildren: () =>
+          import('../account/profile/profile.module').then(
+            (m) => m.ProfileModule
+          ),
+      },
+      {
+        path: `wordpacks`,
+        loadChildren: () =>
+          import('../wordpacks/wordpacks.module').then(
+            (m) => m.WordpacksModule
+          ),
+      },
     ],
   },
 ];

@@ -1,6 +1,22 @@
 <mat-toolbar color="primary" class="header">
   <span routerLink="" class="pointer" (click)="leaveRoom()">Ugibalec</span>
+  <span
+    [routerLink]="'wordpacks'"
+    class="pointer"
+    (click)="leaveRoom()"
+    *ngIf="isLoggedIn"
+    class="margin-left"
+    >Wordpacks</span
+  >
   <span class="spacer"></span>
+  <button
+    mat-icon-button
+    *ngIf="isLoggedIn"
+    (click)="leaveRoom()"
+    [routerLink]="['profile', getUserID]"
+  >
+    <mat-icon>person</mat-icon>
+  </button>
   <button mat-icon-button *ngIf="isLoggedIn" (click)="logout()">
     <mat-icon>logout</mat-icon>
   </button>

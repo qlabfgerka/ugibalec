@@ -7,6 +7,7 @@ import { RoomModule } from './controllers/room/room.module';
 import { WordpackModule } from './controllers/wordpack/wordpack.module';
 import { RoomGateway } from './gateways/room.gateway';
 import { SocketModule } from './services/socket/socket.module';
+import { UserModule } from './controllers/user/user.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { SocketModule } from './services/socket/socket.module';
     RoomModule,
     WordpackModule,
     SocketModule,
+    UserModule,
   ],
   controllers: [],
   providers: [RoomGateway],

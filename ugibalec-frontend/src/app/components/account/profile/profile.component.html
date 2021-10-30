@@ -1,0 +1,42 @@
+<div class="flexbox margin-top" *ngIf="!isLoading">
+  <mat-card class="card">
+    <mat-card-header>
+      <mat-card-title>{{ user.nickname }}</mat-card-title>
+      <mat-card-subtitle>{{ user.username }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="flexbox">
+        <h4>Total points earned: {{ user.cumulativePoints }}</h4>
+        <div class="break"></div>
+        <h4>Total games played: {{ user.gamesPlayed }}</h4>
+        <div class="break"></div>
+        <h4>Total wins: {{ user.wins }}</h4>
+      </div>
+    </mat-card-content>
+  </mat-card>
+  <div class="break"></div>
+  <div class="flexbox">
+    <form
+      class="padding-side wide"
+      [formGroup]="nicknameForm"
+      (ngSubmit)="changeNickname()"
+      *ngIf="nicknameForm"
+    >
+      <mat-form-field appearance="fill" class="wide">
+        <mat-label>Change nickname</mat-label>
+        <input matInput formControlName="nickname" />
+      </mat-form-field>
+
+      <div class="flexbox">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="!nicknameForm.valid"
+        >
+          CHANGE NICKNAME
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

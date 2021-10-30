@@ -43,4 +43,8 @@ export class HeaderComponent implements OnInit {
         this.socketService.stopListening();
       });
   }
+
+  public get getUserID(): string {
+    return this.authService.getUserID();
+  }
 }
