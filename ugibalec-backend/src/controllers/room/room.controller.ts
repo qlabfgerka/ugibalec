@@ -90,8 +90,18 @@ export class RoomController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('leave')
-  public async leaveRooms(@Request() req: any): Promise<boolean> {
-    return await this.roomService.leaveRooms(req.user.id);
+  public async leaveRooms(@Request() req: any): Promise<Array<Room>> {
+    const rooms = await this.roomService.leaveRooms(req.user.id);
+
+    if (rooms) {
+      rooms.forEach((room: Room) => {
+        this.socketService.server
+          .to(room.id)
+          .emit('roomChanged', 'goodbye from server');
+      });
+    }
+
+    return rooms;
   }
 
   @UseGuards(JwtAuthGuard)

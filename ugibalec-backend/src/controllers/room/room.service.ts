@@ -125,7 +125,7 @@ export class RoomService {
     return false;
   }
 
-  public async leaveRooms(userId: string): Promise<boolean> {
+  public async leaveRooms(userId: string): Promise<Array<Room>> {
     const user = await this.userModel.findById(userId);
     const room = await this.roomModel.find({
       playerList: { $elemMatch: { player: user._id } },
@@ -135,7 +135,7 @@ export class RoomService {
       await this.leaveRoom(room.id, user.id);
     });
 
-    return true;
+    return await this.dtoFunctions.roomsToDTO(room);
   }
 
   public async startGame(roomId: string, userId: string): Promise<boolean> {

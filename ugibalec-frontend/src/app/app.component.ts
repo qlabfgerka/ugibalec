@@ -14,7 +14,7 @@ export class AppComponent {
     private readonly socketService: SocketService
   ) {}
 
-  @HostListener('window:beforeunload')
+  @HostListener('window:unload')
   beforeUnloadHandler(): void {
     this.roomService
       .leaveRooms()

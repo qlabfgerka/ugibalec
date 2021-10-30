@@ -86,7 +86,8 @@ export class RoomsComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(take(1))
       .subscribe((connected: boolean) => {
         if (connected) {
-          this.router.navigate([`lobby/${room.id}`]);
+          if (room.currentWord) this.router.navigate([`game/${room.id}`]);
+          else this.router.navigate([`lobby/${room.id}`]);
         }
       });
   }

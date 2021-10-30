@@ -46,8 +46,11 @@ export class RoomService {
     );
   }
 
-  public leaveRooms(): Observable<boolean> {
-    return this.httpClient.patch<boolean>(`${this.hostname}/room/leave`, {});
+  public leaveRooms(): Observable<Array<RoomDTO>> {
+    return this.httpClient.patch<Array<RoomDTO>>(
+      `${this.hostname}/room/leave`,
+      {}
+    );
   }
 
   public kickPlayer(roomId: string, user: UserDTO): Observable<boolean> {
