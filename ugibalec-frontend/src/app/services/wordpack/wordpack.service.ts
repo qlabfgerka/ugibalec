@@ -14,4 +14,10 @@ export class WordpackService {
   public getWordpacks(): Observable<Array<WordpackDTO>> {
     return this.httpClient.get<Array<WordpackDTO>>(`${this.hostname}/wordpack`);
   }
+
+  public createWordpack(wordpack: WordpackDTO): Observable<WordpackDTO> {
+    return this.httpClient.post<WordpackDTO>(`${this.hostname}/wordpack`, {
+      wordpack,
+    });
+  }
 }

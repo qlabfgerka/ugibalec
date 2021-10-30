@@ -1,1 +1,49 @@
-<p>wordpacks works!</p>
+<div class="flexbox">
+  <h1>Create wordpack</h1>
+  <div class="break"></div>
+
+  <div class="flexbox sixty">
+    <form
+      class="padding-side wide"
+      [formGroup]="wordpackForm"
+      (ngSubmit)="createWordpack()"
+      *ngIf="wordpackForm"
+      (keydown.enter)="$event.preventDefault()"
+    >
+      <mat-form-field appearance="fill" class="wide">
+        <mat-label>Add title</mat-label>
+        <input matInput formControlName="title" />
+      </mat-form-field>
+
+      <div formArrayName="words">
+        <mat-form-field
+          appearance="fill"
+          class="wide"
+          *ngFor="let word of words.controls; let i = index"
+        >
+          <mat-label>Add word</mat-label>
+          <input matInput [formControlName]="i" (keyup.enter)="addField()" />
+        </mat-form-field>
+        <button
+          mat-raised-button
+          color="primary"
+          type="button"
+          (click)="addField()"
+        >
+          ADD WORD
+        </button>
+      </div>
+
+      <div class="flexbox">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="!wordpackForm.valid"
+        >
+          CREATE WORDPACK
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

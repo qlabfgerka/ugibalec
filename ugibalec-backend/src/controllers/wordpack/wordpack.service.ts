@@ -16,4 +16,11 @@ export class WordpackService {
 
     return this.dtoFunctions.wordpacksToDTO(wordpacks);
   }
+
+  public async createWordpack(wordpack: Wordpack): Promise<Wordpack> {
+    const newWordpack = new this.wordpackModel(wordpack);
+    await newWordpack.save();
+
+    return this.dtoFunctions.wordpackToDTO(newWordpack);
+  }
 }
