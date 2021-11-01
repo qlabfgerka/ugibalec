@@ -49,7 +49,7 @@ export class LobbyComponent implements OnInit {
       this.router.navigate(['']);
     });
 
-    this.socketService.socket.on('gameStarted', () => {
+    this.socketService.socket.on('goToGame', () => {
       this.router.navigate([`game/${this.room.id}`]);
     });
   }

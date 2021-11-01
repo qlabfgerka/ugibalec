@@ -25,7 +25,11 @@
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        [ngClass]="{ guessed: row.guessed }"
+      ></tr>
     </table>
   </div>
 
@@ -33,13 +37,13 @@
     <div class="flexbox middle unselectable">
       <div [ngClass]="{ shaker: guessed }" class="flexbox">
         <h3
-          *ngIf="!isLoading && getUserID === room.drawer.id"
+          *ngIf="!isLoading && getUserID === room.drawer.id && ready"
           class="margin-right"
         >
           {{ room.currentWord }}
         </h3>
         <h3
-          *ngIf="!isLoading && getUserID !== room.drawer.id"
+          *ngIf="!isLoading && getUserID !== room.drawer.id && word"
           class="margin-right"
         >
           {{ word.split("").join(" ") }}

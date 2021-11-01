@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
 import { mergeMap, take } from 'rxjs/operators';
@@ -8,6 +9,7 @@ import { PlayerDTO, UserDTO } from 'src/app/models/user/user.model';
 import { RoomService } from 'src/app/services/room/room.service';
 import { SocketService } from 'src/app/services/socket/socket.service';
 import { AuthService } from 'src/app/services/user/auth/auth.service';
+import { InformationDialogComponent } from 'src/app/shared/dialogs/information-dialog/information-dialog.component';
 
 @Component({
   selector: 'app-game',
@@ -29,7 +31,7 @@ export class GameComponent implements OnInit {
   public drawing: boolean;
   public interval: ReturnType<typeof setInterval>;
   public counter: number;
-  public seconds: number;
+  public seconds: number = 60000 * 1;
   public guessForm: FormGroup;
   public boundMouseUp: any;
   public boundMouseDown: any;
@@ -37,6 +39,8 @@ export class GameComponent implements OnInit {
   public messages: Array<{ user: UserDTO; guess: string }>;
   public word: string;
   public guessed: boolean = false;
+  public wordDialogRef: MatDialogRef<InformationDialogComponent>;
+  public ready: boolean;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -44,7 +48,8 @@ export class GameComponent implements OnInit {
     private readonly roomService: RoomService,
     private readonly authService: AuthService,
     private readonly socketService: SocketService,
-    private readonly formBuilder: FormBuilder
+    private readonly formBuilder: FormBuilder,
+    private readonly dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -52,15 +57,29 @@ export class GameComponent implements OnInit {
     this.guessForm = this.formBuilder.group({
       guess: ['', [Validators.required]],
     });
+    this.refreshRoom(false, true);
 
-    this.refreshRoom(true, true);
+    this.socketService.socket.on('getReady', () => {
+      this.ready = true;
+      if (this.wordDialogRef) this.wordDialogRef.close();
+      if (this.room.drawer.id === this.getUserID) {
+        this.openDialog(
+          `Get ready to draw! Your word is ${this.room.currentWord}`
+        );
+      }
+    });
+
+    this.socketService.socket.on('gameStarted', () => {
+      if (this.wordDialogRef) this.wordDialogRef.close();
+      this.refreshRoom(true);
+    });
 
     this.socketService.socket.on(
       'drawingChanged',
       (data: { drawing: string; seconds: number }) => {
         const image = new Image();
         image.onload = () => {
-          if (image) this.context.drawImage(image, 0, 0);
+          if (image && this.context) this.context.drawImage(image, 0, 0);
         };
         image.src = data.drawing;
         if (data.seconds % 1000 === 0) {
@@ -82,19 +101,35 @@ export class GameComponent implements OnInit {
       }
     );
 
-    this.socketService.socket.on('roundOver', () => {
-      setTimeout(() => {
+    this.socketService.socket.on('roundOver', (data: boolean) => {
+      if (!data) {
+        this.clearInterval();
+        this.refreshRoom();
+        this.openDialog(`Round over! The word was ${this.room.currentWord}`);
+        this.word = undefined;
+        this.ready = false;
+        this.seconds = 60000 * 1;
+      } else {
+        if (this.wordDialogRef) this.wordDialogRef.close();
         this.guessed = false;
 
         this.context.clearRect(0, 0, 1920, 1080);
         this.refreshRoom(true);
-      }, 5000);
+      }
     });
 
-    this.socketService.socket.on('gameOver', () => {
-      setTimeout(() => {
+    this.socketService.socket.on('gameOver', (data: boolean) => {
+      if (!data) {
+        this.clearInterval();
+        this.openDialog(
+          `Game over! The winner is ${this.room.playerList[0].player.nickname}`
+        );
+      } else {
+        if (this.wordDialogRef) this.wordDialogRef.close();
+        this.clearInterval();
+        this.socketService.stopListening();
         this.router.navigate([`lobby/${this.room.id}`]);
-      }, 10000);
+      }
     });
 
     this.socketService.socket.on(
@@ -151,9 +186,15 @@ export class GameComponent implements OnInit {
     this.route.paramMap
       .pipe(
         take(1),
-        mergeMap((paramMap) =>
-          this.roomService.getRoom(paramMap.get('id')).pipe(take(1))
-        )
+        mergeMap((paramMap) => {
+          if (firstRun) {
+            this.socketService.joinRoom(
+              paramMap.get('id'),
+              this.authService.getUserID()
+            );
+          }
+          return this.roomService.getRoom(paramMap.get('id')).pipe(take(1));
+        })
       )
       .subscribe((room: RoomDTO) => {
         this.room = room;
@@ -164,13 +205,6 @@ export class GameComponent implements OnInit {
 
         if (init) {
           this.initCanvas();
-        }
-
-        if (firstRun) {
-          this.socketService.joinRoom(
-            this.room.id,
-            this.authService.getUserID()
-          );
         }
 
         this.isLoading = false;
@@ -216,7 +250,7 @@ export class GameComponent implements OnInit {
           );
         }
         if (this.counter === 0) {
-          clearInterval(this.interval);
+          this.clearInterval();
           this.roomService
             .updateGame(this.room.id)
             .pipe(take(1))
@@ -224,7 +258,7 @@ export class GameComponent implements OnInit {
         }
       }, 50);
     } else {
-      if (this.interval) clearInterval(this.interval);
+      this.clearInterval();
       this.canvas.nativeElement.removeEventListener(
         'mouseup',
         this.boundMouseUp
@@ -288,5 +322,18 @@ export class GameComponent implements OnInit {
     );
     audio.load();
     audio.play();
+  }
+
+  private clearInterval(): void {
+    if (this.interval) clearInterval(this.interval);
+    this.interval = null;
+  }
+
+  private openDialog(text: string): void {
+    this.wordDialogRef = this.dialog.open(InformationDialogComponent, {
+      data: {
+        information: text,
+      },
+    });
   }
 }

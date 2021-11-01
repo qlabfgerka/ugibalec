@@ -138,7 +138,7 @@ export class RoomService {
     return await this.dtoFunctions.roomsToDTO(room);
   }
 
-  public async startGame(roomId: string, userId: string): Promise<boolean> {
+  public async startGame(roomId: string, userId: string): Promise<Room> {
     const room = await this.roomModel.findById(roomId);
     const user = await this.userModel.findById(userId);
     const wordpack = await this.wordpackModel.findById(
@@ -165,7 +165,7 @@ export class RoomService {
     room.markModified('playerList');
     await room.save();
 
-    return true;
+    return await this.dtoFunctions.roomToDTO(room);
   }
 
   public async guess(

@@ -126,11 +126,23 @@ export class RoomController {
   public async startGame(
     @Param('id') roomId: string,
     @Request() req: any,
-  ): Promise<boolean> {
-    const result = await this.roomService.startGame(roomId, req.user.id);
+  ): Promise<Room> {
+    const result: Room = await this.roomService.startGame(roomId, req.user.id);
 
     if (result) {
-      this.socketService.server.to(roomId).emit('gameStarted', 'game started');
+      this.socketService.server.to(roomId).emit('goToGame', 'enter the game');
+
+      setTimeout(() => {
+        this.socketService.server
+          .to(roomId)
+          .emit('getReady', 'get ready for drawing');
+      }, 2000);
+
+      setTimeout(() => {
+        this.socketService.server
+          .to(roomId)
+          .emit('gameStarted', 'game started');
+      }, 7000);
     }
 
     return result;
@@ -174,9 +186,23 @@ export class RoomController {
     const result = await this.roomService.updateGame(roomId);
 
     if (!result) {
-      this.socketService.server.to(roomId).emit('gameOver', 'game over');
+      this.socketService.server.to(roomId).emit('gameOver', false);
+
+      setTimeout(() => {
+        this.socketService.server.to(roomId).emit('gameOver', true);
+      }, 10000);
     } else {
-      this.socketService.server.to(roomId).emit('roundOver', 'round over');
+      this.socketService.server.to(roomId).emit('roundOver', false);
+
+      setTimeout(() => {
+        this.socketService.server
+          .to(roomId)
+          .emit('getReady', 'get ready for drawing');
+      }, 6000);
+
+      setTimeout(() => {
+        this.socketService.server.to(roomId).emit('roundOver', true);
+      }, 11000);
     }
 
     return result;

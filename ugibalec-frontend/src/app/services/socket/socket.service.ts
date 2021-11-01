@@ -36,8 +36,10 @@ export class SocketService {
   }
 
   public stopListening(): void {
+    this.socket.off('getReady');
     this.socket.off('roomChanged');
     this.socket.off('kicked');
+    this.socket.off('goToGame');
     this.socket.off('gameStarted');
     this.socket.off('drawingChanged');
     this.socket.off('guessed');
